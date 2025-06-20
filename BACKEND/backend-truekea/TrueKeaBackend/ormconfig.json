@@ -1,0 +1,9 @@
+﻿{
+  "type": "postgres",
+  "url": "",
+  "entities": ["src/infrastructure/adapter/typeorm/entities/**/*.ts"],
+  "migrations": ["src/infrastructure/adapter/typeorm/migrations/**/*.ts"],
+  "cli": {
+    "migrationsDir": "src/infrastructure/adapter/typeorm/migrations"
+  }
+}
