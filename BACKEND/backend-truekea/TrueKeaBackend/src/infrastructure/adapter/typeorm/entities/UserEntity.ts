@@ -7,6 +7,7 @@ import {
   ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
+  JoinColumn,
 } from "typeorm";
 import { ItemEntity } from "./ItemEntity";
 import { MessageEntity } from "./MessageEntity";
@@ -30,6 +31,7 @@ export class UserEntity {
   password: string;
 
   @ManyToOne(() => RoleEntity, (role) => role.users, { eager: true })
+  @JoinColumn({ name: "roleId" })
   roleId: RoleEntity;
 
   @OneToMany(() => ItemEntity, (item) => item.owner)

@@ -40,6 +40,9 @@ export class ItemEntity {
   @OneToMany(() => SwapEntity, (swap) => swap.offeredItem)
   offeredSwaps: SwapEntity[];
 
+  @Column({ type: "varchar", length: 500, nullable: true })
+  img_item: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

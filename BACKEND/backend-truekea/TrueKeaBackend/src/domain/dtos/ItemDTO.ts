@@ -4,7 +4,8 @@ export default class ItemDTO {
     public readonly description: string,
     public readonly value: number,
     public readonly categoryId: number,
-    public readonly ownerId: number
+    public readonly ownerId: number,
+    public readonly img_item?: string
   ) {
     if (!title.trim()) {
       throw new Error("Title is required");
@@ -15,11 +16,5 @@ export default class ItemDTO {
     if (value <= 0) {
       throw new Error("Value must be positive");
     }
-
-    [categoryId, ownerId].forEach((id) => {
-      if (!Number.isInteger(id) || id <= 0) {
-        throw new Error("Invalid ID");
-      }
-    });
   }
 }

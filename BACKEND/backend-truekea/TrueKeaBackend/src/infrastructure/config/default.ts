@@ -11,7 +11,7 @@ export default {
     username: process.env.DB_USER || "postgres",
     password: process.env.DB_PASS || "password",
     database: process.env.DB_NAME || "truekea",
-    synchronize: process.env.TYPEORM_SYNC === "true",
+    synchronize: true,
     entities: [__dirname + "/../adapter/typeorm/entities/*Entity.{ts,js}"],
     migrations: [__dirname + "/../adapter/typeorm/migrations/*.{ts,js}"],
   },
@@ -21,6 +21,8 @@ export default {
     refreshSecret: process.env.JWT_REFRESH_SECRET || "your_refresh_secret",
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
   },
+  azure: {
+    connectionString: process.env.AZURE_CONNECTION_STRING || "secret",
+    containerName: process.env.AZURE_CONTAINER_NAME || "img-truekea1",
+  },
 };
-
-//console.log("password", process.env.DB_PASS);

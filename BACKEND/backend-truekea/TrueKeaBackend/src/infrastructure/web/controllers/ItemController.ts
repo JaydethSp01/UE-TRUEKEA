@@ -9,12 +9,18 @@ export default {
   async create(req: Request, res: Response) {
     try {
       const dto = req.body;
-      const item = await new CreateItem().execute(dto);
+
+      if (!req.file) {
+        return res.status(400).json({ message: "Debe enviar una imagen." });
+      }
+
+      const item = await new CreateItem().execute(dto, req.file);
       return res.status(201).json(item);
     } catch (error: any) {
       return res.status(400).json({ message: error.message });
     }
   },
+
   async list(req: Request, res: Response) {
     try {
       const items = await new ListItems().execute();
@@ -23,6 +29,7 @@ export default {
       return res.status(400).json({ message: error.message });
     }
   },
+
   async get(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -32,6 +39,7 @@ export default {
       return res.status(400).json({ message: error.message });
     }
   },
+
   async update(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -42,6 +50,7 @@ export default {
       return res.status(400).json({ message: error.message });
     }
   },
+
   async delete(req: Request, res: Response) {
     try {
       const { id } = req.params;

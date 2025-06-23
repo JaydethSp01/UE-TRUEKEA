@@ -6,7 +6,8 @@ export class Item {
     public readonly description: string,
     public value: number,
     public categoryId: number,
-    public ownerId: number
+    public ownerId: number,
+    public img_item?: string
   ) {
     if (!title.trim()) {
       throw new Error("Title required");
@@ -19,11 +20,5 @@ export class Item {
     if (value <= 0) {
       throw new Error("Value must be positive");
     }
-
-    [categoryId, ownerId].forEach((id) => {
-      if (!Number.isInteger(id) || id <= 0) {
-        throw new Error("Invalid ID");
-      }
-    });
   }
 }

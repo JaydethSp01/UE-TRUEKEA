@@ -1,10 +1,12 @@
 // infrastructure/web/routes/itemRoutes.ts
 import { Router } from "express";
 import ItemController from "../controllers/ItemController";
+import multer from "multer";
 
 const router = Router();
+const upload = multer();
 
-router.post("/", (req, res, next) => {
+router.post("/", upload.single("image"), (req, res, next) => {
   ItemController.create(req, res).catch(next);
 });
 
