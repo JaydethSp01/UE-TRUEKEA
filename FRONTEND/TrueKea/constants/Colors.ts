@@ -1,51 +1,56 @@
 export const Colors = {
-  // Primary Colors
-  primary: "#4A90E2",
-  primaryDark: "#2E5B9A",
-  primaryLight: "#E8F4FD",
+  // Primary Colors (aire/agua)
+  primary: "#2A9D8F", // verde azulado suave
+  primaryDark: "#1E6B5A", // bosque profundo
+  primaryLight: "#D4F1EF", // agua cristalina
 
-  // Secondary Colors
-  secondary: "#50C878",
-  secondaryDark: "#3A8F5A",
-  secondaryLight: "#E8F5EC",
+  // Secondary Colors (vegetación)
+  secondary: "#8CBF26", // verde hoja
+  secondaryDark: "#5D7A18", // verde musgo
+  secondaryLight: "#E6F4D9", // verde muy claro
 
-  // Accent Colors
-  accent: "#FF6B6B",
-  accentDark: "#CC5555",
-  accentLight: "#FFE8E8",
+  // Accent Colors (CO₂ / alertas)
+  accent: "#F4A261", // naranja cálido
+  accentDark: "#C27A46", // terracota
+  accentLight: "#FFEDD8", // melocotón pálido
+
+  // Error Color
+  error: "#E76F51", // rojo ladrillo
+  errorDark: "#A84532",
+  errorLight: "#FDE3DF",
 
   // Warning & Success
-  warning: "#FFA726",
-  warningLight: "#FFF3E0",
-  success: "#66BB6A",
-  successLight: "#E8F5E8",
+  warning: "#E9C46A", // mostaza suave
+  warningLight: "#FEF8E7",
+  success: "#2A9D8F", // mismo que primary para armonía
+  successLight: "#D4F1EF",
 
   // Neutral Colors
-  background: "#FFFFFF",
-  surface: "#F8F9FA",
+  background: "#F0F3F1", // gris muy suave
+  surface: "#FFFFFF",
   card: "#FFFFFF",
 
   // Text Colors
-  text: "#1A1A1A",
-  textSecondary: "#6B7280",
-  textLight: "#9CA3AF",
-  textMuted: "#D1D5DB",
+  text: "#264653", // azul petróleo oscuro
+  textSecondary: "#406E7A", // gris azulado medio
+  textLight: "#6C7A89",
+  textMuted: "#AAB2B9",
 
   // Border & Dividers
-  border: "#E5E7EB",
-  divider: "#F3F4F6",
+  border: "#E0E4E3",
+  divider: "#F3F4F3",
 
   // Status Colors
-  online: "#10B981",
-  offline: "#EF4444",
-  pending: "#F59E0B",
+  online: "#55A630", // verde vivo
+  offline: "#E63946", // rojo vivo
+  pending: "#F4A261", // mismo que accent
 
-  destructive: "#EF4444",
+  destructive: "#E63946",
 
   // Gradients
-  gradientPrimary: ["#4A90E2", "#2E5B9A"] as [string, string, ...string[]],
-  gradientSecondary: ["#50C878", "#3A8F5A"] as [string, string, ...string[]],
-  gradientAccent: ["#FF6B6B", "#CC5555"],
+  gradientPrimary: ["#2A9D8F", "#8CBF26"] as [string, string, ...string[]],
+  gradientSecondary: ["#8CBF26", "#2A9D8F"] as [string, string, ...string[]],
+  gradientAccent: ["#F4A261", "#E76F51"] as [string, string, ...string[]],
 
   // Shadows
   shadow: {

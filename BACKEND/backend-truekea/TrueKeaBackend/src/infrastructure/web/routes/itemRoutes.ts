@@ -15,7 +15,7 @@ router.post("/list", (req, res, next) => {
 });
 
 router.get("/:id", (req, res, next) => {
-  ItemController.get(req, res).catch(next);
+  ItemController.getbyId(req, res).catch(next);
 });
 
 router.put("/:id", (req, res, next) => {

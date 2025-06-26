@@ -3,6 +3,8 @@ import { Request as ExpressRequest, Response } from "express";
 import RegisterUser from "../../../application/user/RegisterUser";
 import ListUserStats from "../../../application/user/ListUserStats";
 import UpdateUserProfile from "../../../application/user/UpdateUserProfile";
+import { DeactivateUser } from "../../../application/user/DeactivateUser";
+import { UserRepository } from "../../adapter/typeorm/repositories/UserRepository";
 
 export interface AuthenticatedRequest extends ExpressRequest {
   userId: number;
@@ -32,6 +34,18 @@ export default {
     try {
       const dto = { id: req.userId, ...req.body };
       const user = await new UpdateUserProfile().execute(dto);
+      return res.json(user);
+    } catch (error: any) {
+      return res.status(400).json({ message: error.message });
+    }
+  },
+
+  async deactivateUser(req: ExpressRequest, res: Response) {
+    try {
+      const userId = parseInt(req.params.id, 10);
+      const userRepository = new UserRepository();
+      const deactivateUser = new DeactivateUser(userRepository);
+      const user = await deactivateUser.execute(userId);
       return res.json(user);
     } catch (error: any) {
       return res.status(400).json({ message: error.message });

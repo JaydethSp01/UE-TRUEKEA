@@ -5,33 +5,30 @@ import { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
 import { useFonts } from "expo-font";
 
-// Prevenir que el splash screen se oculte automáticamente
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
-    // Puedes agregar fuentes personalizadas aquí si lo deseas
-  });
+  const [fontsLoaded] = useFonts({});
 
   useEffect(() => {
-    if (fontsLoaded) {
-      SplashScreen.hideAsync();
-    }
+    if (fontsLoaded) SplashScreen.hideAsync();
   }, [fontsLoaded]);
 
-  if (!fontsLoaded) {
-    return null;
-  }
+  if (!fontsLoaded) return null;
 
   return (
     <AuthProvider>
       <Stack screenOptions={{ headerShown: false }}>
+        {/*
+          Aquí el name es el nombre de la pantalla (el nombre del archivo .tsx
+          en tu carpeta app/). No es el path ni la URL.
+        */}
         <Stack.Screen name="index" />
         <Stack.Screen name="login" />
         <Stack.Screen name="register" />
         <Stack.Screen name="onboarding" />
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="add-item" />
+        <Stack.Screen name="AddItem" />
         <Stack.Screen name="item/[id]" />
         <Stack.Screen name="chat/[userId]" />
         <Stack.Screen name="profile/[userId]" />

@@ -83,12 +83,7 @@ export default function RootLayout() {
             title: "Chats",
           }}
         />
-        <Stack.Screen
-          name="chat/[id]"
-          options={{
-            title: "Chat",
-          }}
-        />
+        <Stack.Screen name="chat/[id]" />
         <Stack.Screen
           name="item/[id]"
           options={{

@@ -137,24 +137,28 @@ export default function AddItemScreen() {
       formDataToSend.append("categoryId", formData.categoryId);
       formDataToSend.append("ownerId", user?.id?.toString() || "");
 
-      // Agregar imagen
-      formDataToSend.append("image", {
-        uri: image,
-        type: "image/jpeg",
-        name: "item-image.jpg",
-      } as any);
+      if (Platform.OS === "web") {
+        // En web convertimos la URI en Blob
+        const resp = await fetch(image);
+        const blob = await resp.blob();
+        formDataToSend.append("image", blob, "item-image.jpg");
+      } else {
+        // En iOS/Android seguimos usando el objeto {uri, type, name}
+        formDataToSend.append("image", {
+          uri: image,
+          type: "image/jpeg",
+          name: "item-image.jpg",
+        } as any);
+      }
 
-      await api.post("/items", formDataToSend, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+      const response = await api.post("/items", formDataToSend, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       Alert.alert("¡Éxito!", "Tu producto ha sido publicado", [
         { text: "OK", onPress: () => router.back() },
       ]);
     } catch (error) {
-      console.error("Error creating item:", error);
       Alert.alert(
         "Error",
         "No se pudo publicar el producto. Intenta de nuevo."
@@ -163,7 +167,6 @@ export default function AddItemScreen() {
       setLoading(false);
     }
   };
-
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView

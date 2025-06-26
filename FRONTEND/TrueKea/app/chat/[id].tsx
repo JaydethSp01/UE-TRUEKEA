@@ -1,4 +1,3 @@
-// app/chat/[userId].tsx
 import React, { useState, useEffect, useRef } from "react";
 import {
   View,
@@ -14,9 +13,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { Colors } from "../constants/Colors";
-import api from "../services/api";
-import { useAuth } from "../hooks/useAuth";
+import { Colors } from "../../constants/Colors";
+import api from "../../services/api";
+import { useAuth } from "../../hooks/useAuth";
 
 interface Message {
   id: number;
@@ -28,7 +27,13 @@ interface Message {
 
 export default function ChatScreen() {
   const router = useRouter();
-  const { userId } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const userId = Array.isArray(params.userId)
+    ? params.userId[0]
+    : params.userId;
+  const itemId = Array.isArray(params.itemId)
+    ? params.itemId[0]
+    : params.itemId;
   const { user } = useAuth();
   const flatListRef = useRef<FlatList>(null);
 
@@ -42,30 +47,48 @@ export default function ChatScreen() {
   } | null>(null);
 
   useEffect(() => {
-    loadMessages();
-    // Simular información del otro usuario
-    setOtherUser({ id: Number(userId), name: "Usuario" });
-  }, [userId]);
+    if (userId && itemId && user?.id) {
+      loadMessages();
+      fetchOtherUser();
+    } else {
+      setLoading(false);
+    }
+  }, [userId, itemId, user?.id]);
 
-  const loadMessages = async () => {
+  const fetchOtherUser = async () => {
     try {
-      // Por ahora simularemos mensajes ya que el endpoint de obtener mensajes no está implementado
-      setMessages([
-        {
-          id: 1,
-          sender: { id: Number(userId), name: "Otro Usuario" },
-          receiver: { id: user?.id || 0, name: user?.name || "" },
-          content: "¡Hola! Me interesa tu producto",
-          timestamp: new Date(Date.now() - 3600000).toISOString(),
+      const res = await api.get(`/users/${userId}`);
+      setOtherUser({ id: res.data.id, name: res.data.name });
+    } catch (error) {
+      setOtherUser({ id: Number(userId), name: "Usuario" });
+    }
+  };
+
+  // En el componente ChatScreen (cambiar solo esta parte)
+  const loadMessages = async () => {
+    if (!itemId || !userId || !user?.id) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await api.post("/messages/conversation", {
+        params: {
+          itemId: Number(itemId),
+          userAId: user.id,
+          userBId: Number(userId),
         },
-        {
-          id: 2,
-          sender: { id: user?.id || 0, name: user?.name || "" },
-          receiver: { id: Number(userId), name: "Otro Usuario" },
-          content: "¡Hola! Claro, ¿cuál te interesa?",
-          timestamp: new Date(Date.now() - 1800000).toISOString(),
-        },
-      ]);
+      });
+
+      const formattedMessages = response.data.map((msg: any) => ({
+        id: msg.id,
+        sender: { id: msg.sender.id, name: msg.sender.name },
+        receiver: { id: msg.receiver.id, name: msg.receiver.name },
+        content: msg.content,
+        timestamp: msg.createdAt,
+      }));
+
+      setMessages(formattedMessages);
     } catch (error) {
       console.error("Error loading messages:", error);
     } finally {
@@ -74,7 +97,7 @@ export default function ChatScreen() {
   };
 
   const sendMessage = async () => {
-    if (!inputText.trim() || sending) return;
+    if (!inputText.trim() || sending || !itemId) return;
 
     setSending(true);
     const tempMessage: Message = {
@@ -85,7 +108,7 @@ export default function ChatScreen() {
       timestamp: new Date().toISOString(),
     };
 
-    setMessages([...messages, tempMessage]);
+    setMessages((prev) => [...prev, tempMessage]);
     setInputText("");
 
     try {
@@ -93,16 +116,14 @@ export default function ChatScreen() {
         senderId: user?.id || 0,
         receiverId: Number(userId),
         content: inputText,
+        itemId: Number(itemId),
       });
 
-      // Scroll al final
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
     } catch (error) {
-      console.error("Error sending message:", error);
-      // Remover mensaje temporal si falla
-      setMessages(messages);
+      setMessages((prev) => prev.filter((msg) => msg.id !== tempMessage.id));
     } finally {
       setSending(false);
     }
@@ -160,7 +181,6 @@ export default function ChatScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => router.back()}
@@ -184,7 +204,6 @@ export default function ChatScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Messages */}
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -197,7 +216,6 @@ export default function ChatScreen() {
         }
       />
 
-      {/* Input */}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}

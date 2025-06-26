@@ -56,15 +56,24 @@ export class ItemRepository implements IItemRepository {
 
       if (!found) return null;
 
-      return new Item(
+      // Construyo la entidad de dominio como antes
+      const item = new Item(
         found.id,
         found.title,
         found.description,
-        found.value,
+        Number(found.value),
         found.category.id,
         found.owner.id,
         found.img_item
       );
+
+      // Luego asigno las entidades completas
+      Object.assign(item, {
+        category: found.category,
+        owner: found.owner,
+      });
+
+      return item;
     } catch {
       return null;
     }

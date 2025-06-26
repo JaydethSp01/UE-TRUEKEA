@@ -9,11 +9,13 @@ import messageRoutes from "../web/routes/messageRoutes";
 import ratingRoutes from "../web/routes/ratingRoutes";
 import swapRoutes from "../web/routes/swapRoutes";
 import userRoutes from "../web/routes/userRoutes";
+import user_preferencesRoutes from "../web/routes/user_preferences";
+import categoryRoutes from "../web/routes/category";
+import roleRoutes from "../web/routes/roleRoutes";
+import swapAdminRoutes from "../web/routes/swapAdminRoutes";
 
 import { authMiddleware } from "../web/middlewares/authMiddleware";
 import { errorMiddleware } from "../web/middlewares/errorMiddleware";
-import user_preferencesRoutes from "../web/routes/user_preferences";
-import categoryRoutes from "../web/routes/category";
 
 const app = express();
 
@@ -35,6 +37,8 @@ app.use("/swaps", authMiddleware, swapRoutes);
 app.use("/user/preferences", authMiddleware, user_preferencesRoutes);
 app.use("/categories", categoryRoutes);
 app.use("/users", userRoutes);
+app.use("/roles", roleRoutes);
+app.use("/admin/swaps", swapAdminRoutes);
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({ message: "Endpoint not found" });

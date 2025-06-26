@@ -14,6 +14,7 @@ export class UserRepository implements IUserRepository {
       email: entity.email,
       password: entity.password,
       roleId: { id: entity.roleId },
+      status_user: entity.status_user,
     });
 
     return new User(
@@ -23,7 +24,8 @@ export class UserRepository implements IUserRepository {
       saved.password,
       saved.roleId.id,
       saved.createdAt,
-      saved.updatedAt
+      saved.updatedAt,
+      saved.status_user
     );
   }
 
@@ -38,7 +40,8 @@ export class UserRepository implements IUserRepository {
       found.password,
       found.roleId.id,
       found.createdAt,
-      found.updatedAt
+      found.updatedAt,
+      found.status_user
     );
   }
 
@@ -53,7 +56,8 @@ export class UserRepository implements IUserRepository {
       found.password,
       found.roleId.id,
       found.createdAt,
-      found.updatedAt
+      found.updatedAt,
+      found.status_user
     );
   }
 
@@ -68,7 +72,8 @@ export class UserRepository implements IUserRepository {
           u.password,
           u.roleId.id,
           u.createdAt,
-          u.updatedAt
+          u.updatedAt,
+          u.status_user
         )
     );
   }
@@ -80,6 +85,7 @@ export class UserRepository implements IUserRepository {
       email: entity.email,
       password: entity.password,
       roleId: { id: entity.roleId },
+      status_user: entity.status_user,
     });
 
     return new User(
@@ -89,7 +95,8 @@ export class UserRepository implements IUserRepository {
       updated.password,
       updated.roleId.id,
       updated.createdAt,
-      updated.updatedAt
+      updated.updatedAt,
+      updated.status_user
     );
   }
 

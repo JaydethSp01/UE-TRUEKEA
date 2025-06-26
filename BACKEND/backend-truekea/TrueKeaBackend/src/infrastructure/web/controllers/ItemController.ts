@@ -6,6 +6,7 @@ import ListItems, {
 } from "../../../application/item/ListItems";
 import UpdateItem from "../../../application/item/UpdateItem";
 import DeleteItem from "../../../application/item/DeleteItem";
+import GetItemById from "../../../application/item/ListById";
 
 export default {
   async create(req: Request, res: Response) {
@@ -38,11 +39,10 @@ export default {
     }
   },
 
-  async get(req: Request, res: Response) {
+  async getbyId(req: Request, res: Response) {
     try {
       const id = parseInt(req.params.id, 10);
-      const filters: ListItemsFilters = { categoryIds: [id] };
-      const items = await new ListItems().execute(filters);
+      const items = await new GetItemById().execute(id);
       res.json(items);
     } catch (err: any) {
       res.status(400).json({ message: err.message });

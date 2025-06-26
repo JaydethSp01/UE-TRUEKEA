@@ -1,3 +1,4 @@
+// src/index.ts
 import "reflect-metadata";
 import { createConnection } from "typeorm";
 import config from "./infrastructure/config/default";
@@ -17,15 +18,18 @@ async function bootstrap() {
       entities: config.db.entities,
       migrations: config.db.migrations,
     });
+    console.log("🔌 Conexión a PostgreSQL establecida");
 
-    console.log("Cargando datos de CO2...");
+    console.log("♻️  Cargando datos de CO₂...");
     await CarbonFootprintHelper.loadDataFromDB();
-    console.log("Datos de CO2 cargados exitosamente");
+    console.log("✅ Datos de CO₂ cargados exitosamente");
 
-    await server.listen(config.app.port);
-    console.log(`Servidor corriendo en el puerto ${config.app.port} :)`);
+    await server.listen(config.app.port, "0.0.0.0");
+    console.log(
+      `🚀 Servidor corriendo en el puerto ${config.app.port} y escuchando en 0.0.0.0`
+    );
   } catch (error) {
-    console.error("Error al inicializar la aplicación:", error);
+    console.error("❌ Error al inicializar la aplicación:", error);
     process.exit(1);
   }
 }

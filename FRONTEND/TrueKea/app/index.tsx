@@ -18,6 +18,7 @@ import { ItemCard, Item as RawItem } from "../components/ItemCard";
 import { useAuth } from "../hooks/useAuth";
 import { useSegments } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import { routes } from "../utils/navigation";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 48) / 2;
@@ -44,7 +45,7 @@ const categoryIcons: { [key: string]: string } = {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [items, setItems] = useState<RawItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
@@ -63,7 +64,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (isReady && !user) {
-      router.replace("/login");
+      router.replace(routes.login);
     }
   }, [user, isReady]);
 
@@ -75,7 +76,6 @@ export default function HomeScreen() {
     );
   }
 
-  // Cargar categorías
   useEffect(() => {
     loadCategories();
   }, []);
@@ -93,7 +93,6 @@ export default function HomeScreen() {
     }
   };
 
-  // Cargar items cuando cambie el filtro
   useEffect(() => {
     loadItems();
   }, [selectedCategory, showingPreferences, user?.preferences]);
@@ -159,7 +158,6 @@ export default function HomeScreen() {
     selectedCategory !== null ||
     (showingPreferences && user?.preferences && user.preferences.length > 0);
 
-  // Obtener nombre de categoría para el título
   const getFilterTitle = () => {
     if (selectedCategory !== null) {
       const cat = categories.find((c) => c.id === selectedCategory);
@@ -177,7 +175,6 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header con gradiente */}
       <LinearGradient
         colors={[Colors.primary, Colors.primaryLight]}
         style={styles.headerGradient}
@@ -188,18 +185,32 @@ export default function HomeScreen() {
               <Text style={styles.greeting}>¡Hola, {user.name}! 👋</Text>
               <Text style={styles.subtitle}>¿Qué vas a intercambiar hoy?</Text>
             </View>
-            <TouchableOpacity
-              style={styles.notificationButton}
-              onPress={() => router.push("/notifications")}
-            >
-              <Ionicons name="notifications-outline" size={24} color="white" />
-              <View style={styles.notificationBadge}>
-                <Text style={styles.notificationCount}>3</Text>
-              </View>
-            </TouchableOpacity>
+            <View style={styles.headerIcons}>
+              <TouchableOpacity
+                style={styles.notificationButton}
+                onPress={() => router.push(routes.notifications)}
+              >
+                <Ionicons
+                  name="notifications-outline"
+                  size={24}
+                  color="white"
+                />
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationCount}>3</Text>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.logoutButton}
+                onPress={() => {
+                  logout();
+                  router.replace(routes.login);
+                }}
+              >
+                <Ionicons name="log-out-outline" size={24} color="white" />
+              </TouchableOpacity>
+            </View>
           </View>
 
-          {/* Quick Actions */}
           <View style={styles.quickActions}>
             {user?.preferences && user.preferences.length > 0 && (
               <TouchableOpacity
@@ -265,7 +276,7 @@ export default function HomeScreen() {
 
             <TouchableOpacity
               style={styles.quickActionButton}
-              onPress={() => router.push("/search")}
+              onPress={() => router.push(routes.search)}
             >
               <Ionicons name="search" size={20} color="white" />
               <Text style={styles.quickActionText}>Buscar</Text>
@@ -274,7 +285,6 @@ export default function HomeScreen() {
         </View>
       </LinearGradient>
 
-      {/* Categorías */}
       <View style={styles.categoriesSection}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Categorías</Text>
@@ -332,7 +342,6 @@ export default function HomeScreen() {
         </ScrollView>
       </View>
 
-      {/* Lista de productos */}
       <View style={styles.productsSection}>
         <View style={styles.productsHeader}>
           <Text style={styles.productsTitle}>{getFilterTitle()}</Text>
@@ -374,7 +383,7 @@ export default function HomeScreen() {
                 </Text>
                 <TouchableOpacity
                   style={styles.emptyButton}
-                  onPress={() => router.push("/add-item")}
+                  onPress={() => router.push(routes.addItem)}
                 >
                   <Text style={styles.emptyButtonText}>Publicar ahora</Text>
                 </TouchableOpacity>
@@ -384,7 +393,7 @@ export default function HomeScreen() {
                 <View key={item.id} style={styles.itemWrapper}>
                   <ItemCard
                     item={item}
-                    onPress={() => router.push(`/item/${item.id}`)}
+                    onPress={() => router.push(routes.item(item.id))}
                   />
                 </View>
               ))
@@ -393,10 +402,9 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {/* FAB */}
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => router.push("/add-item")}
+        onPress={() => router.push(routes.addItem)}
         activeOpacity={0.8}
       >
         <LinearGradient
@@ -441,18 +449,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
-  greeting: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "white",
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.8)",
+  headerIcons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
   },
   notificationButton: {
     position: "relative",
+    padding: 8,
+  },
+  logoutButton: {
     padding: 8,
   },
   notificationBadge: {
@@ -470,6 +476,16 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 11,
     fontWeight: "600",
+  },
+  greeting: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "white",
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.8)",
   },
   quickActions: {
     flexDirection: "row",

@@ -1,34 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import api from "../services/api";
-
-type AuthResponse = {
-  token: string;
-  refreshToken: string;
-  user: {
-    id: number;
-    name: string;
-    email: string;
-    roleId: number;
-    statusUser: string;
-    preferences: number[];
-  };
-  categoriesIfNoPrefs: { id: number; name: string }[];
-  initialItems: {
-    id: number;
-    title: string;
-    categoryId: number;
-    co2Unit: number;
-    co2Total: number;
-  }[];
-  initialCO2: {
-    totalCO2: number;
-    treesNeeded: number;
-    carKilometers: number;
-    lightBulbHours: number;
-    flightMinutes: number;
-  };
-};
+import api, { AuthResponse } from "../services/api";
 
 type AuthContextType = {
   user: AuthResponse["user"] | null;
@@ -39,9 +11,12 @@ type AuthContextType = {
   logout: () => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   loading: boolean;
+  resetInactivityTimer: () => void;
 };
 
 const AuthContext = createContext<AuthContextType>({} as any);
+
+const INACTIVITY_TIMEOUT = 15 * 60 * 1000;
 
 export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
   children,
@@ -59,51 +34,61 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
     AuthResponse["categoriesIfNoPrefs"]
   >([]);
   const [loading, setLoading] = useState(true);
+  const [inactivityTimer, setInactivityTimer] = useState<number | null>(null);
+  const resetInactivityTimer = () => {
+    if (inactivityTimer) {
+      clearTimeout(inactivityTimer);
+    }
+    const timer = setTimeout(() => {
+      logout();
+    }, INACTIVITY_TIMEOUT);
+    setInactivityTimer(timer);
+  };
+
+  const initializeAuth = async () => {
+    try {
+      const refreshToken = await AsyncStorage.getItem("refreshToken");
+      if (refreshToken) {
+        const data = await api.refreshAuth(refreshToken);
+        await AsyncStorage.setItem("token", data.token);
+        await AsyncStorage.setItem("refreshToken", data.refreshToken);
+        setUser(data.user);
+        setItems(data.initialItems || []);
+        setCO2(
+          data.initialCO2 || {
+            totalCO2: 0,
+            treesNeeded: 0,
+            carKilometers: 0,
+            lightBulbHours: 0,
+            flightMinutes: 0,
+          }
+        );
+        setCategoriesIfNoPrefs(data.categoriesIfNoPrefs || []);
+        resetInactivityTimer();
+      }
+    } catch {
+      await AsyncStorage.clear();
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const token = await AsyncStorage.getItem("token");
-        if (token) {
-          api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-          try {
-            const res = await api.post<AuthResponse>("/auth/refresh");
-            await AsyncStorage.setItem("token", res.data.token);
-            api.defaults.headers.common[
-              "Authorization"
-            ] = `Bearer ${res.data.token}`;
-            setUser(res.data.user);
-            setItems(res.data.initialItems);
-            setCO2(res.data.initialCO2);
-            setCategoriesIfNoPrefs(res.data.categoriesIfNoPrefs);
-          } catch {
-            await AsyncStorage.removeItem("token");
-            delete api.defaults.headers.common["Authorization"];
-          }
-        }
-      } finally {
-        setLoading(false);
+    initializeAuth();
+
+    return () => {
+      if (inactivityTimer) {
+        clearTimeout(inactivityTimer);
       }
     };
-    initializeAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
-    const response = await api.post<AuthResponse>("/auth/login", {
-      email,
-      password,
-    });
-    if (!response.data || !response.data.token) {
-      throw new Error("Respuesta inválida del servidor");
-    }
-    await AsyncStorage.setItem("token", response.data.token);
-    api.defaults.headers.common[
-      "Authorization"
-    ] = `Bearer ${response.data.token}`;
-    setUser(response.data.user);
-    setItems(response.data.initialItems || []);
+    const data = await api.login(email, password);
+    setUser(data.user);
+    setItems(data.initialItems || []);
     setCO2(
-      response.data.initialCO2 || {
+      data.initialCO2 || {
         totalCO2: 0,
         treesNeeded: 0,
         carKilometers: 0,
@@ -111,16 +96,21 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
         flightMinutes: 0,
       }
     );
-    setCategoriesIfNoPrefs(response.data.categoriesIfNoPrefs || []);
+    setCategoriesIfNoPrefs(data.categoriesIfNoPrefs || []);
+    await AsyncStorage.setItem("token", data.token);
+    await AsyncStorage.setItem("refreshToken", data.refreshToken);
+    resetInactivityTimer();
   };
 
   const register = async (name: string, email: string, password: string) => {
-    await api.post("/users", { name, email, password, roleId: 2 });
+    await api.register({ name, email, password });
   };
 
   const logout = async () => {
-    await AsyncStorage.removeItem("token");
-    delete api.defaults.headers.common["Authorization"];
+    if (inactivityTimer) {
+      clearTimeout(inactivityTimer);
+    }
+    await AsyncStorage.clear();
     setUser(null);
     setItems([]);
     setCO2({
@@ -144,6 +134,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
         logout,
         register,
         loading,
+        resetInactivityTimer,
       }}
     >
       {children}

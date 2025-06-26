@@ -15,7 +15,7 @@ export default {
 
   async conversation(req: Request, res: Response) {
     try {
-      const { itemId, userAId, userBId } = req.query;
+      const { itemId, userAId, userBId } = req.body;
       const messages = await new ListMessages().execute(
         Number(itemId),
         Number(userAId),
