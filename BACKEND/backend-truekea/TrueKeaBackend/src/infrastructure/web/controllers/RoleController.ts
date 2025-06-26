@@ -7,11 +7,10 @@ import { GetRoleById } from "../../../application/role/GetRoleById";
 import { UpdateRole } from "../../../application/role/UpdateRole";
 import { DeleteRole } from "../../../application/role/DeleteRole";
 
-const roleRepository = new RoleRepository();
-
 export const RoleController = {
   async createRole(req: Request, res: Response) {
     try {
+      const roleRepository = new RoleRepository();
       const createRole = new CreateRole(roleRepository);
       const role = await createRole.execute(req.body);
       res.status(201).json(role);
@@ -22,6 +21,7 @@ export const RoleController = {
 
   async getRoles(req: Request, res: Response) {
     try {
+      const roleRepository = new RoleRepository();
       const getRoles = new GetAllRoles(roleRepository);
       const roles = await getRoles.execute();
       res.status(200).json(roles);
@@ -32,6 +32,7 @@ export const RoleController = {
 
   async getRoleById(req: Request, res: Response) {
     try {
+      const roleRepository = new RoleRepository();
       const getRole = new GetRoleById(roleRepository);
       const role = await getRole.execute(parseInt(req.params.id));
       if (role) {
@@ -46,6 +47,7 @@ export const RoleController = {
 
   async updateRole(req: Request, res: Response) {
     try {
+      const roleRepository = new RoleRepository();
       const updateRole = new UpdateRole(roleRepository);
       const role = await updateRole.execute(parseInt(req.params.id), req.body);
       res.status(200).json(role);
@@ -56,6 +58,7 @@ export const RoleController = {
 
   async deleteRole(req: Request, res: Response) {
     try {
+      const roleRepository = new RoleRepository();
       const deleteRole = new DeleteRole(roleRepository);
       const success = await deleteRole.execute(parseInt(req.params.id));
       if (success) {

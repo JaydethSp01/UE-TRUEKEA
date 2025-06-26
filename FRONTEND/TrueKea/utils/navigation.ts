@@ -17,8 +17,22 @@ export const routes = {
   search: "/search" as Href,
   notifications: "/notifications" as Href,
 
+  // Admin routes
+  adminDashboard: "/admin" as Href,
+  adminUsers: "/admin/users" as Href,
+  adminCategories: "/admin/categories" as Href,
+  adminItems: "/admin/items" as Href,
+  adminRoles: "/admin/roles" as Href,
+  adminSwaps: "/admin/swaps" as Href,
+
   // Dynamic routes
   item: (id: number | string) => `/item/${id}` as Href,
   chat: (id: number | string) => `/chat/${id}` as Href,
   profileUser: (userId: number | string) => `/profile/${userId}` as Href,
+
+  // Admin dynamic routes
+  adminUserDetail: (userId: number | string) =>
+    `/admin/users/${userId}` as Href,
+  adminItemEdit: (itemId: number | string) =>
+    `/admin/items/edit/${itemId}` as Href,
 };

@@ -135,8 +135,11 @@ export default function ItemDetailScreen() {
   };
 
   const handleChat = () => {
+    console.log("item.owner:", item?.owner);
+    console.log("item.owner.id:", item?.owner?.id);
     if (!item?.owner?.id) return;
     const chatRoute = `/chat/${item.owner.id}?itemId=${item.id}` as Href;
+    console.log("chatRoute:", chatRoute);
     router.push(chatRoute);
   };
 

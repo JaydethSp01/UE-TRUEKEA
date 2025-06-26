@@ -1,93 +1,90 @@
 // app/_layout.tsx
-import React from "react";
 import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { AuthProvider } from "../hooks/useAuth";
-import { Colors } from "../constants/Colors";
+import { useEffect } from "react";
+import * as SplashScreen from "expo-splash-screen";
+import { useFonts } from "expo-font";
+
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({});
+
+  useEffect(() => {
+    if (fontsLoaded) SplashScreen.hideAsync();
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) return null;
+
   return (
     <AuthProvider>
-      <StatusBar style="dark" backgroundColor={Colors.background} />
-      <Stack
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: Colors.background,
-          },
-          headerTintColor: Colors.text,
-          headerTitleStyle: {
-            fontWeight: "600",
-            fontSize: 18,
-          },
-          headerShadowVisible: false,
-        }}
-      >
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="login" />
+        <Stack.Screen name="register" />
+        <Stack.Screen name="onboarding" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="AddItem" />
+        <Stack.Screen name="item/[id]" />
+        <Stack.Screen name="chat/[userId]" />
+        <Stack.Screen name="profile/[userId]" />
+        <Stack.Screen name="requests" />
+        <Stack.Screen name="rating" />
+
+        {/* Admin routes */}
         <Stack.Screen
-          name="login"
+          name="admin"
+          options={{
+            headerShown: true,
+            title: "Panel de Administración",
+          }}
+        />
+        <Stack.Screen
+          name="admin/users"
           options={{
             headerShown: false,
           }}
         />
         <Stack.Screen
-          name="register"
+          name="admin/categories"
           options={{
             headerShown: false,
           }}
         />
         <Stack.Screen
-          name="preferences"
+          name="admin/items"
           options={{
-            title: "Preferencias",
-            headerBackVisible: false,
+            headerShown: false,
           }}
         />
         <Stack.Screen
-          name="profile"
+          name="admin/roles"
           options={{
-            title: "Mi Perfil",
+            headerShown: false,
           }}
         />
         <Stack.Screen
-          name="publish"
+          name="admin/swaps"
           options={{
-            title: "Publicar Objeto",
+            headerShown: false,
+          }}
+        />
+
+        {/* Modal screens */}
+        <Stack.Screen
+          name="notifications"
+          options={{
+            presentation: "modal",
+            headerShown: true,
+            title: "Notificaciones",
           }}
         />
         <Stack.Screen
           name="search"
           options={{
+            presentation: "modal",
+            headerShown: true,
             title: "Buscar",
-          }}
-        />
-        <Stack.Screen
-          name="requests"
-          options={{
-            title: "Mis Solicitudes",
-          }}
-        />
-        <Stack.Screen
-          name="rating"
-          options={{
-            title: "Calificación",
-          }}
-        />
-        <Stack.Screen
-          name="admin"
-          options={{
-            title: "Administración",
-          }}
-        />
-        <Stack.Screen
-          name="chat/index"
-          options={{
-            title: "Chats",
-          }}
-        />
-        <Stack.Screen name="chat/[id]" />
-        <Stack.Screen
-          name="item/[id]"
-          options={{
-            title: "Detalle del Objeto",
           }}
         />
       </Stack>

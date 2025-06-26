@@ -1,21 +1,21 @@
-import React, { useState, useEffect, useRef } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
+  ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
-  ActivityIndicator,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter, useLocalSearchParams } from "expo-router";
 import { Colors } from "../../constants/Colors";
-import api from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
+import api from "../../services/api";
 
 interface Message {
   id: number;
@@ -25,15 +25,18 @@ interface Message {
   timestamp: string;
 }
 
+interface Item {
+  id: number;
+  name: string;
+  owner: {
+    id: number;
+    name: string;
+  };
+}
+
 export default function ChatScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams();
-  const userId = Array.isArray(params.userId)
-    ? params.userId[0]
-    : params.userId;
-  const itemId = Array.isArray(params.itemId)
-    ? params.itemId[0]
-    : params.itemId;
+  const { id: receiverId, itemId } = useLocalSearchParams<{ id: string, itemId?: string }>();
   const { user } = useAuth();
   const flatListRef = useRef<FlatList>(null);
 
@@ -41,54 +44,53 @@ export default function ChatScreen() {
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [otherUser, setOtherUser] = useState<{
-    id: number;
-    name: string;
-  } | null>(null);
+  const [item, setItem] = useState<Item | null>(null);
+  const [otherUser, setOtherUser] = useState<{ id: number; name: string } | null>(null);
 
   useEffect(() => {
-    if (userId && itemId && user?.id) {
-      loadMessages();
-      fetchOtherUser();
-    } else {
-      setLoading(false);
-    }
-  }, [userId, itemId, user?.id]);
+    const fetchItemAndLoadMessages = async () => {
+      if (!receiverId || !itemId || !user) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const itemRes = await api.getItem(itemId);
+        const fetchedItem = itemRes.item;
+        setItem(fetchedItem);
 
-  const fetchOtherUser = async () => {
+        let otherUserId: number | undefined;
+        if (fetchedItem?.owner && user.id === fetchedItem.owner.id) {
+          otherUserId = Number(receiverId);
+        } else if (fetchedItem?.owner && user.id !== fetchedItem.owner.id) {
+          otherUserId = fetchedItem.owner.id;
+        }
+
+        if (otherUserId) {
+          const otherUserRes = await api.get(`/users/${otherUserId}`);
+          setOtherUser(otherUserRes.data);
+          loadMessages(fetchedItem?.id || Number(itemId), otherUserId);
+        } else {
+          setOtherUser(null);
+          setLoading(false);
+        }
+      } catch (error) {
+        setOtherUser(null);
+        setLoading(false);
+      }
+    };
+
+    fetchItemAndLoadMessages();
+  }, [receiverId, itemId, user]);
+
+  const loadMessages = async (itemId: number, otherUserId: number) => {
+    if (!user) return;
     try {
-      const res = await api.get(`/users/${userId}`);
-      setOtherUser({ id: res.data.id, name: res.data.name });
-    } catch (error) {
-      setOtherUser({ id: Number(userId), name: "Usuario" });
-    }
-  };
-
-  // En el componente ChatScreen (cambiar solo esta parte)
-  const loadMessages = async () => {
-    if (!itemId || !userId || !user?.id) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const response = await api.post("/messages/conversation", {
-        params: {
-          itemId: Number(itemId),
-          userAId: user.id,
-          userBId: Number(userId),
-        },
+      const response = await api.getConversationMessages({
+        itemId,
+        userAId: user.id,
+        userBId: otherUserId,
       });
-
-      const formattedMessages = response.data.map((msg: any) => ({
-        id: msg.id,
-        sender: { id: msg.sender.id, name: msg.sender.name },
-        receiver: { id: msg.receiver.id, name: msg.receiver.name },
-        content: msg.content,
-        timestamp: msg.createdAt,
-      }));
-
-      setMessages(formattedMessages);
+      setMessages(response);
     } catch (error) {
       console.error("Error loading messages:", error);
     } finally {
@@ -97,13 +99,20 @@ export default function ChatScreen() {
   };
 
   const sendMessage = async () => {
-    if (!inputText.trim() || sending || !itemId) return;
+    if (
+      !inputText.trim() ||
+      sending ||
+      !receiverId ||
+      !itemId ||
+      !user?.id
+    )
+      return;
 
     setSending(true);
     const tempMessage: Message = {
       id: Date.now(),
-      sender: { id: user?.id || 0, name: user?.name || "" },
-      receiver: { id: Number(userId), name: otherUser?.name || "" },
+      sender: { id: user.id, name: user.name },
+      receiver: { id: Number(receiverId), name: "" },
       content: inputText,
       timestamp: new Date().toISOString(),
     };
@@ -113,8 +122,8 @@ export default function ChatScreen() {
 
     try {
       await api.sendMessage({
-        senderId: user?.id || 0,
-        receiverId: Number(userId),
+        senderId: user.id,
+        receiverId: Number(receiverId),
         content: inputText,
         itemId: Number(itemId),
       });
@@ -223,17 +232,18 @@ export default function ChatScreen() {
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            placeholder="Escribe un mensaje..."
+            placeholder={"Escribe un mensaje..."}
             placeholderTextColor={Colors.textSecondary}
             value={inputText}
             onChangeText={setInputText}
             multiline
             maxLength={500}
+            editable={!!receiverId && !!itemId && !!user}
           />
           <TouchableOpacity
             style={[
               styles.sendButton,
-              !inputText.trim() && styles.sendButtonDisabled,
+              (!inputText.trim() || sending) && styles.sendButtonDisabled,
             ]}
             onPress={sendMessage}
             disabled={!inputText.trim() || sending}

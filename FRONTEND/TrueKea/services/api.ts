@@ -229,6 +229,9 @@ class ApiService {
   delete<T = any>(url: string) {
     return this.api.delete<T>(url);
   }
+  patch<T = any>(url: string, data?: any) {
+    return this.api.patch<T>(url, data);
+  }
 }
 
 export default new ApiService();

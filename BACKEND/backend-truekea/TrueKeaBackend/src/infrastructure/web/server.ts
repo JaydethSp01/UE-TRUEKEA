@@ -35,10 +35,10 @@ app.use("/messages", authMiddleware, messageRoutes);
 app.use("/ratings", authMiddleware, ratingRoutes);
 app.use("/swaps", authMiddleware, swapRoutes);
 app.use("/user/preferences", authMiddleware, user_preferencesRoutes);
-app.use("/categories", categoryRoutes);
-app.use("/users", userRoutes);
-app.use("/roles", roleRoutes);
-app.use("/admin/swaps", swapAdminRoutes);
+app.use("/categories", authMiddleware, categoryRoutes);
+app.use("/users", authMiddleware, userRoutes);
+app.use("/roles", authMiddleware, roleRoutes);
+app.use("/admin/swaps", authMiddleware, swapAdminRoutes);
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({ message: "Endpoint not found" });

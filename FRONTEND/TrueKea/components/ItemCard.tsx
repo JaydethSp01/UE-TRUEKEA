@@ -32,6 +32,7 @@ export interface Item {
   };
   createdAt: string;
   updatedAt: string;
+  status: string;
 }
 
 interface ItemCardProps {

@@ -17,6 +17,7 @@ import { useAuth } from "../hooks/useAuth";
 import { Colors } from "../constants/Colors";
 import { TextInputField } from "../components/TextInputField";
 import { ButtonPrimary } from "../components/ButtonPrimary";
+import { routes } from "../utils/navigation";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -27,10 +28,12 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (user) {
-      if (user.preferences?.length === 0) {
-        router.replace("/onboarding");
+      if (user.roleId === 1) {
+        router.replace(routes.adminDashboard);
+      } else if (user.preferences?.length === 0) {
+        router.replace(routes.onboarding);
       } else {
-        router.replace("/");
+        router.replace(routes.home);
       }
     }
   }, [user]);
