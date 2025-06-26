@@ -11,6 +11,7 @@ import {
 import { CategoryEntity } from "./CategoryEntity";
 import { UserEntity } from "./UserEntity";
 import { SwapEntity } from "./SwapEntity";
+import { MessageEntity } from "./MessageEntity";
 
 @Entity({ name: "items" })
 export class ItemEntity {
@@ -48,4 +49,7 @@ export class ItemEntity {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @OneToMany(() => MessageEntity, (message) => message.item)
+  messages: MessageEntity[];
 }

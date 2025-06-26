@@ -1,4 +1,3 @@
-// app/register.tsx
 import React, { useState } from "react";
 import {
   View,
@@ -9,6 +8,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -18,39 +18,43 @@ import { TextInputField } from "../components/TextInputField";
 import { ButtonPrimary } from "../components/ButtonPrimary";
 
 export default function RegisterScreen() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const { register, loading } = useAuth();
   const router = useRouter();
 
   const handleRegister = async () => {
-    if (!email || !password || !confirmPassword || !name) {
+    if (!name || !email || !password || !confirmPassword) {
       Alert.alert("Error", "Por favor completa todos los campos");
       return;
     }
-
     if (password !== confirmPassword) {
       Alert.alert("Error", "Las contraseñas no coinciden");
       return;
     }
-
     if (password.length < 6) {
       Alert.alert("Error", "La contraseña debe tener al menos 6 caracteres");
       return;
     }
-
-    setLoading(true);
     try {
-      await register(email, password);
-    } catch (error) {
+      await register(name.trim(), email.trim(), password);
+      Alert.alert("¡Listo!", "Cuenta creada con éxito", [
+        { text: "Ir a login", onPress: () => router.replace("/login") },
+      ]);
+    } catch {
       Alert.alert("Error", "No se pudo crear la cuenta");
-    } finally {
-      setLoading(false);
     }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -65,17 +69,14 @@ export default function RegisterScreen() {
               Comienza tu viaje hacia un consumo más sostenible
             </Text>
           </View>
-
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Crear Cuenta</Text>
-
             <TextInputField
               placeholder="Nombre completo"
               value={name}
               onChangeText={setName}
               style={styles.input}
             />
-
             <TextInputField
               placeholder="Correo electrónico"
               value={email}
@@ -84,7 +85,6 @@ export default function RegisterScreen() {
               autoCapitalize="none"
               style={styles.input}
             />
-
             <TextInputField
               placeholder="Contraseña"
               value={password}
@@ -92,7 +92,6 @@ export default function RegisterScreen() {
               secureTextEntry
               style={styles.input}
             />
-
             <TextInputField
               placeholder="Confirmar contraseña"
               value={confirmPassword}
@@ -100,14 +99,12 @@ export default function RegisterScreen() {
               secureTextEntry
               style={styles.input}
             />
-
             <ButtonPrimary
               title="Crear Cuenta"
               onPress={handleRegister}
-              loading={loading}
+              loading={false}
               style={styles.registerButton}
             />
-
             <TouchableOpacity
               style={styles.linkContainer}
               onPress={() => router.back()}
@@ -118,26 +115,6 @@ export default function RegisterScreen() {
               </Text>
             </TouchableOpacity>
           </View>
-
-          <View style={styles.benefits}>
-            <Text style={styles.benefitsTitle}>¿Por qué TrueKea?</Text>
-            <View style={styles.benefitItem}>
-              <Text style={styles.benefitEmoji}>♻️</Text>
-              <Text style={styles.benefitText}>
-                Contribuye al medio ambiente
-              </Text>
-            </View>
-            <View style={styles.benefitItem}>
-              <Text style={styles.benefitEmoji}>💰</Text>
-              <Text style={styles.benefitText}>
-                Ahorra dinero intercambiando
-              </Text>
-            </View>
-            <View style={styles.benefitItem}>
-              <Text style={styles.benefitEmoji}>🤝</Text>
-              <Text style={styles.benefitText}>Conecta con tu comunidad</Text>
-            </View>
-          </View>
         </ScrollView>
       </LinearGradient>
     </KeyboardAvoidingView>
@@ -145,6 +122,11 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
+  loaderContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   container: {
     flex: 1,
   },
@@ -204,32 +186,5 @@ const styles = StyleSheet.create({
   linkTextBold: {
     fontWeight: "600",
     color: Colors.secondary,
-  },
-  benefits: {
-    backgroundColor: Colors.background,
-    borderRadius: 16,
-    padding: 20,
-    opacity: 0.95,
-  },
-  benefitsTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: Colors.text,
-    textAlign: "center",
-    marginBottom: 16,
-  },
-  benefitItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  benefitEmoji: {
-    fontSize: 20,
-    marginRight: 12,
-  },
-  benefitText: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    flex: 1,
   },
 });

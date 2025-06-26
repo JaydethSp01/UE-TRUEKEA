@@ -1,7 +1,9 @@
 // infrastructure/web/controllers/ItemController.ts
 import { Request, Response } from "express";
 import CreateItem from "../../../application/item/CreateItem";
-import ListItems from "../../../application/item/ListItems";
+import ListItems, {
+  ListItemsFilters,
+} from "../../../application/item/ListItems";
 import UpdateItem from "../../../application/item/UpdateItem";
 import DeleteItem from "../../../application/item/DeleteItem";
 
@@ -22,21 +24,28 @@ export default {
   },
 
   async list(req: Request, res: Response) {
+    const filters: ListItemsFilters = {
+      categoryIds: req.body.categoryIds,
+      minCo2: req.body.minCo2,
+      maxCo2: req.body.maxCo2,
+      nameRegex: req.body.nameRegex,
+    };
     try {
-      const items = await new ListItems().execute();
-      return res.json(items);
-    } catch (error: any) {
-      return res.status(400).json({ message: error.message });
+      const items = await new ListItems().execute(filters);
+      res.json(items);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
     }
   },
 
   async get(req: Request, res: Response) {
     try {
-      const { id } = req.params;
-      const item = await new ListItems().execute(id);
-      return res.json(item);
-    } catch (error: any) {
-      return res.status(400).json({ message: error.message });
+      const id = parseInt(req.params.id, 10);
+      const filters: ListItemsFilters = { categoryIds: [id] };
+      const items = await new ListItems().execute(filters);
+      res.json(items);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
     }
   },
 

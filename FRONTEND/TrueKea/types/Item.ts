@@ -1,31 +1,27 @@
-export interface ItemRequest {
-  id: string;
-  itemId: string;
-  requesterId: string;
-  requesterName: string;
-  requesterAvatar: string;
-  message: string;
-  status: "pending" | "accepted" | "rejected" | "completed";
-  createdAt: string;
-  offeredItems?: string[];
-}
-export interface Item {
-  id: string;
+export type Item = {
+  id: number;
   title: string;
   description: string;
-  category: string;
-  condition: "new" | "like-new" | "good" | "fair" | "poor";
-  images: string[];
-  userId: string;
-  userName: string;
-  userAvatar: string;
-  location: string;
-  estimatedValue: number;
-  co2Saved: number;
-  isAvailable: boolean;
-  createdAt: string;
-  tags: string[];
-  interestedUsers?: string[];
-  userRating?: number; // Valoración del usuario (opcional)
-  status?: "available" | "pending" | "exchanged"; // Estado del ítem
-}
+  value: number;
+  categoryId: number;
+  ownerId: number;
+  img_item: string;
+  category: {
+    id: number;
+    name: string;
+    co2: number;
+  };
+  owner: {
+    id: number;
+    name: string;
+  };
+  co2Unit: number;
+  co2Total: number;
+  co2Equivalencies: {
+    treesNeeded: number;
+    carKilometers: number;
+    lightBulbHours: number;
+    flightMinutes: number;
+  };
+  status: "available" | "pending" | "exchanged";
+};

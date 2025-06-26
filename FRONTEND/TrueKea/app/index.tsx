@@ -1,243 +1,411 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-  Dimensions,
   SafeAreaView,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-
 import { Colors } from "../constants/Colors";
-import { Categories } from "../constants/Categories";
-import { useItems } from "../hooks/useItems";
-import { useCO2 } from "../hooks/useCO2";
-import { ItemCard } from "../components/ItemCard";
-import { ButtonPrimary } from "../components/ButtonPrimary";
+import api from "../services/api";
+import { ItemCard, Item as RawItem } from "../components/ItemCard";
+import { useAuth } from "../hooks/useAuth";
+import { useSegments } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 
 const { width } = Dimensions.get("window");
+const CARD_WIDTH = (width - 48) / 2;
+
+type Category = {
+  id: number;
+  name: string;
+  co2: number;
+  icon?: string;
+};
+
+const categoryIcons: { [key: string]: string } = {
+  Electrónica: "phone-portrait",
+  Hogar: "home",
+  Ropa: "shirt",
+  Libros: "book",
+  Deportes: "fitness",
+  Juguetes: "game-controller",
+  Herramientas: "construct",
+  Música: "musical-notes",
+  Arte: "color-palette",
+  Jardín: "leaf",
+};
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { items, loading } = useItems();
-  const { co2Data } = useCO2();
+  const { user } = useAuth();
+  const [items, setItems] = useState<RawItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [showingPreferences, setShowingPreferences] = useState(true);
 
-  const filteredItems = selectedCategory
-    ? items.filter((item) => item.category === selectedCategory)
-    : items;
+  const segments = useSegments();
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    if (segments) {
+      setIsReady(true);
+    }
+  }, [segments]);
+
+  useEffect(() => {
+    if (isReady && !user) {
+      router.replace("/login");
+    }
+  }, [user, isReady]);
+
+  if (!user) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
+
+  // Cargar categorías
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      const res = await api.get<Category[]>("/categories");
+      const categoriesWithIcons = res.data.map((cat) => ({
+        ...cat,
+        icon: categoryIcons[cat.name] || "pricetag",
+      }));
+      setCategories(categoriesWithIcons);
+    } catch (error) {
+      console.error("Error loading categories:", error);
+    }
+  };
+
+  // Cargar items cuando cambie el filtro
+  useEffect(() => {
+    loadItems();
+  }, [selectedCategory, showingPreferences, user?.preferences]);
+
+  const loadItems = async () => {
+    setLoading(true);
+
+    let categoryIds: number[] | undefined;
+
+    if (selectedCategory === null) {
+      if (
+        showingPreferences &&
+        user?.preferences &&
+        user.preferences.length > 0
+      ) {
+        categoryIds = user.preferences;
+      } else {
+        categoryIds = undefined;
+      }
+    } else {
+      categoryIds = [selectedCategory];
+    }
+
+    const filters = {
+      categoryIds,
+      minCo2: undefined,
+      maxCo2: undefined,
+      nameRegex: undefined,
+    };
+
+    try {
+      const res = await api.post<RawItem[]>("/items/list", filters);
+      setItems(res.data);
+    } catch (error) {
+      console.error("Error loading items:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    // Simular refresh
-    setTimeout(() => setRefreshing(false), 1000);
+    await loadItems();
+    setRefreshing(false);
+  };
+
+  const handleShowAllProducts = () => {
+    setSelectedCategory(null);
+    setShowingPreferences(false);
+  };
+
+  const handleShowPreferences = () => {
+    setSelectedCategory(null);
+    setShowingPreferences(true);
+  };
+
+  const clearFilters = () => {
+    setSelectedCategory(null);
+    setShowingPreferences(false);
+  };
+
+  const hasActiveFilters =
+    selectedCategory !== null ||
+    (showingPreferences && user?.preferences && user.preferences.length > 0);
+
+  // Obtener nombre de categoría para el título
+  const getFilterTitle = () => {
+    if (selectedCategory !== null) {
+      const cat = categories.find((c) => c.id === selectedCategory);
+      return cat ? cat.name : "Productos";
+    }
+    if (
+      showingPreferences &&
+      user?.preferences &&
+      user.preferences.length > 0
+    ) {
+      return "Mis Preferencias";
+    }
+    return "Todos los Productos";
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        showsVerticalScrollIndicator={false}
+      {/* Header con gradiente */}
+      <LinearGradient
+        colors={[Colors.primary, Colors.primaryLight]}
+        style={styles.headerGradient}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>¡Hola! 👋</Text>
-            <Text style={styles.subtitle}>¿Qué quieres intercambiar hoy?</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.profileButton}
-            onPress={() => router.push("/profile")}
-          >
-            <Ionicons name="person-circle" size={32} color={Colors.primary} />
-          </TouchableOpacity>
-        </View>
-
-        {/* CO2 Impact Card */}
-        <LinearGradient
-          colors={Colors.gradientSecondary as [string, string, ...string[]]}
-          style={styles.impactCard}
-        >
-          <View style={styles.impactContent}>
+        <View style={styles.headerContent}>
+          <View style={styles.headerTop}>
             <View>
-              <Text style={styles.impactTitle}>Tu Impacto</Text>
-              <Text style={styles.impactValue}>{co2Data.totalSaved}kg CO₂</Text>
-              <Text style={styles.impactSubtitle}>ahorrados este mes</Text>
+              <Text style={styles.greeting}>¡Hola, {user.name}! 👋</Text>
+              <Text style={styles.subtitle}>¿Qué vas a intercambiar hoy?</Text>
             </View>
-            <View style={styles.impactIcon}>
-              <Ionicons name="leaf" size={40} color="white" />
-            </View>
-          </View>
-        </LinearGradient>
-
-        {/* Categories */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Categorías</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoriesContainer}
-          >
             <TouchableOpacity
-              style={[
-                styles.categoryChip,
-                !selectedCategory && styles.categoryChipActive,
-              ]}
-              onPress={() => setSelectedCategory(null)}
+              style={styles.notificationButton}
+              onPress={() => router.push("/notifications")}
             >
-              <Text
-                style={[
-                  styles.categoryText,
-                  !selectedCategory && styles.categoryTextActive,
-                ]}
-              >
-                Todos
-              </Text>
+              <Ionicons name="notifications-outline" size={24} color="white" />
+              <View style={styles.notificationBadge}>
+                <Text style={styles.notificationCount}>3</Text>
+              </View>
             </TouchableOpacity>
-            {Categories.map((category) => (
+          </View>
+
+          {/* Quick Actions */}
+          <View style={styles.quickActions}>
+            {user?.preferences && user.preferences.length > 0 && (
               <TouchableOpacity
-                key={category.id}
                 style={[
-                  styles.categoryChip,
-                  selectedCategory === category.id && styles.categoryChipActive,
+                  styles.quickActionButton,
+                  showingPreferences &&
+                    selectedCategory === null &&
+                    styles.quickActionActive,
                 ]}
-                onPress={() =>
-                  setSelectedCategory(
-                    selectedCategory === category.id ? null : category.id
-                  )
-                }
+                onPress={handleShowPreferences}
               >
-                <Text style={styles.categoryIcon}>{category.icon}</Text>
+                <Ionicons
+                  name="heart"
+                  size={20}
+                  color={
+                    showingPreferences && selectedCategory === null
+                      ? Colors.primary
+                      : "white"
+                  }
+                />
                 <Text
                   style={[
-                    styles.categoryText,
-                    selectedCategory === category.id &&
-                      styles.categoryTextActive,
+                    styles.quickActionText,
+                    showingPreferences &&
+                      selectedCategory === null &&
+                      styles.quickActionTextActive,
                   ]}
                 >
-                  {category.name}
+                  Para ti
                 </Text>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+            )}
 
-        {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Acciones Rápidas</Text>
-          <View style={styles.quickActions}>
             <TouchableOpacity
-              style={styles.quickAction}
-              onPress={() => router.push("/publish")}
+              style={[
+                styles.quickActionButton,
+                !showingPreferences &&
+                  selectedCategory === null &&
+                  styles.quickActionActive,
+              ]}
+              onPress={handleShowAllProducts}
             >
-              <View
+              <Ionicons
+                name="grid"
+                size={20}
+                color={
+                  !showingPreferences && selectedCategory === null
+                    ? Colors.primary
+                    : "white"
+                }
+              />
+              <Text
                 style={[
-                  styles.quickActionIcon,
-                  { backgroundColor: Colors.primaryLight },
+                  styles.quickActionText,
+                  !showingPreferences &&
+                    selectedCategory === null &&
+                    styles.quickActionTextActive,
                 ]}
               >
-                <Ionicons name="add" size={24} color={Colors.primary} />
-              </View>
-              <Text style={styles.quickActionText}>Publicar</Text>
+                Explorar
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.quickAction}
+              style={styles.quickActionButton}
               onPress={() => router.push("/search")}
             >
-              <View
-                style={[
-                  styles.quickActionIcon,
-                  { backgroundColor: Colors.secondaryLight },
-                ]}
-              >
-                <Ionicons name="search" size={24} color={Colors.secondary} />
-              </View>
+              <Ionicons name="search" size={20} color="white" />
               <Text style={styles.quickActionText}>Buscar</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </LinearGradient>
 
+      {/* Categorías */}
+      <View style={styles.categoriesSection}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Categorías</Text>
+          {hasActiveFilters && (
+            <TouchableOpacity onPress={clearFilters} style={styles.clearChip}>
+              <Text style={styles.clearChipText}>Limpiar</Text>
+              <Ionicons name="close-circle" size={16} color={Colors.primary} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoryScroll}
+          contentContainerStyle={styles.categoryScrollContent}
+        >
+          {categories.map((cat) => (
             <TouchableOpacity
-              style={styles.quickAction}
-              onPress={() => router.push("/requests")}
+              key={cat.id}
+              style={[
+                styles.categoryCard,
+                selectedCategory === cat.id && styles.categoryCardActive,
+              ]}
+              onPress={() => {
+                setSelectedCategory(
+                  selectedCategory === cat.id ? null : cat.id
+                );
+                setShowingPreferences(false);
+              }}
             >
               <View
                 style={[
-                  styles.quickActionIcon,
-                  { backgroundColor: Colors.accentLight },
+                  styles.categoryIconContainer,
+                  selectedCategory === cat.id && styles.categoryIconActive,
                 ]}
               >
                 <Ionicons
-                  name="swap-horizontal"
+                  name={cat.icon as any}
                   size={24}
-                  color={Colors.accent}
+                  color={selectedCategory === cat.id ? "white" : Colors.primary}
                 />
               </View>
-              <Text style={styles.quickActionText}>Intercambios</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.quickAction}
-              onPress={() => router.push("/chat")}
-            >
-              <View
+              <Text
                 style={[
-                  styles.quickActionIcon,
-                  { backgroundColor: Colors.warningLight },
+                  styles.categoryName,
+                  selectedCategory === cat.id && styles.categoryNameActive,
                 ]}
               >
-                <Ionicons name="chatbubbles" size={24} color={Colors.warning} />
-              </View>
-              <Text style={styles.quickActionText}>Chats</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Items Grid */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
-              {selectedCategory ? "Items Filtrados" : "Últimos Items"}
-            </Text>
-            <TouchableOpacity onPress={() => router.push("/search")}>
-              <Text style={styles.seeAllText}>Ver todos</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.itemsGrid}>
-            {filteredItems.slice(0, 6).map((item) => (
-              <View key={item.id} style={styles.itemWrapper}>
-                <ItemCard
-                  item={item}
-                  onPress={() => router.push(`/item/${item.id}`)}
-                />
-              </View>
-            ))}
-          </View>
-
-          {filteredItems.length === 0 && (
-            <View style={styles.emptyState}>
-              <Ionicons name="search" size={64} color={Colors.textMuted} />
-              <Text style={styles.emptyStateText}>
-                No hay items en esta categoría
+                {cat.name}
               </Text>
-              <ButtonPrimary
-                title="Explorar todos"
-                onPress={() => setSelectedCategory(null)}
-                style={styles.emptyStateButton}
-              />
-            </View>
-          )}
+              <Text style={styles.categoryCo2}>{cat.co2} kg CO₂</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Lista de productos */}
+      <View style={styles.productsSection}>
+        <View style={styles.productsHeader}>
+          <Text style={styles.productsTitle}>{getFilterTitle()}</Text>
+          <Text style={styles.productCount}>
+            {items.length} {items.length === 1 ? "producto" : "productos"}
+          </Text>
         </View>
-      </ScrollView>
+
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+            <Text style={styles.loadingText}>Cargando productos...</Text>
+          </View>
+        ) : (
+          <ScrollView
+            contentContainerStyle={styles.grid}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[Colors.primary]}
+                tintColor={Colors.primary}
+              />
+            }
+            showsVerticalScrollIndicator={false}
+          >
+            {items.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Ionicons
+                  name="cube-outline"
+                  size={64}
+                  color={Colors.textSecondary}
+                />
+                <Text style={styles.emptyTitle}>No hay productos</Text>
+                <Text style={styles.emptyText}>
+                  {hasActiveFilters
+                    ? "No se encontraron productos con los filtros aplicados"
+                    : "Sé el primero en publicar un producto"}
+                </Text>
+                <TouchableOpacity
+                  style={styles.emptyButton}
+                  onPress={() => router.push("/add-item")}
+                >
+                  <Text style={styles.emptyButtonText}>Publicar ahora</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              items.map((item) => (
+                <View key={item.id} style={styles.itemWrapper}>
+                  <ItemCard
+                    item={item}
+                    onPress={() => router.push(`/item/${item.id}`)}
+                  />
+                </View>
+              ))
+            )}
+          </ScrollView>
+        )}
+      </View>
+
+      {/* FAB */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => router.push("/add-item")}
+        activeOpacity={0.8}
+      >
+        <LinearGradient
+          colors={[Colors.primary, Colors.primaryDark]}
+          style={styles.fabGradient}
+        >
+          <Ionicons name="add" size={28} color="white" />
+        </LinearGradient>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -247,68 +415,90 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  scrollView: {
+  loadingContainer: {
     flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.background,
   },
-  header: {
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  headerGradient: {
+    paddingTop: 20,
+    paddingBottom: 24,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  headerContent: {
+    paddingHorizontal: 20,
+  },
+  headerTop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    marginBottom: 20,
   },
   greeting: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: Colors.text,
+    fontSize: 24,
+    fontWeight: "700",
+    color: "white",
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 16,
-    color: Colors.textSecondary,
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.8)",
   },
-  profileButton: {
+  notificationButton: {
+    position: "relative",
     padding: 8,
   },
-  impactCard: {
-    marginHorizontal: 20,
-    marginBottom: 24,
-    borderRadius: 16,
-    padding: 20,
-    ...Colors.cardShadow,
-  },
-  impactContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  impactTitle: {
-    fontSize: 16,
-    color: "white",
-    opacity: 0.9,
-    marginBottom: 4,
-  },
-  impactValue: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "white",
-    marginBottom: 4,
-  },
-  impactSubtitle: {
-    fontSize: 14,
-    color: "white",
-    opacity: 0.8,
-  },
-  impactIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "rgba(255,255,255,0.2)",
+  notificationBadge: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    backgroundColor: Colors.error,
+    borderRadius: 10,
+    width: 20,
+    height: 20,
     justifyContent: "center",
     alignItems: "center",
   },
-  section: {
-    marginBottom: 24,
+  notificationCount: {
+    color: "white",
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  quickActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  quickActionButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 12,
+    gap: 8,
+  },
+  quickActionActive: {
+    backgroundColor: "white",
+  },
+  quickActionText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  quickActionTextActive: {
+    color: Colors.primary,
+  },
+  categoriesSection: {
+    marginTop: 24,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -318,91 +508,149 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 18,
+    fontWeight: "700",
     color: Colors.text,
-    marginBottom: 16,
-    paddingHorizontal: 20,
   },
-  seeAllText: {
-    fontSize: 14,
+  clearChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: Colors.primaryLight + "20",
+    borderRadius: 16,
+    gap: 4,
+  },
+  clearChipText: {
+    fontSize: 12,
     color: Colors.primary,
     fontWeight: "600",
   },
-  categoriesContainer: {
-    paddingHorizontal: 20,
-  },
-  categoryChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.surface,
+  categoryScroll: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 12,
+  },
+  categoryScrollContent: {
+    paddingRight: 20,
+    gap: 12,
+  },
+  categoryCard: {
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: Colors.card,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.border,
+    marginRight: 12,
+    minWidth: 100,
   },
-  categoryChipActive: {
-    backgroundColor: Colors.primary,
+  categoryCardActive: {
+    backgroundColor: Colors.primaryLight + "20",
     borderColor: Colors.primary,
   },
-  categoryIcon: {
-    fontSize: 16,
-    marginRight: 6,
+  categoryIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.primaryLight + "20",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
   },
-  categoryText: {
-    fontSize: 14,
+  categoryIconActive: {
+    backgroundColor: Colors.primary,
+  },
+  categoryName: {
+    fontSize: 13,
+    fontWeight: "600",
     color: Colors.text,
+    marginBottom: 4,
+  },
+  categoryNameActive: {
+    color: Colors.primary,
+  },
+  categoryCo2: {
+    fontSize: 11,
+    color: Colors.success,
     fontWeight: "500",
   },
-  categoryTextActive: {
-    color: "white",
+  productsSection: {
+    flex: 1,
+    marginTop: 24,
   },
-  quickActions: {
+  productsHeader: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    paddingHorizontal: 20,
-  },
-  quickAction: {
+    justifyContent: "space-between",
     alignItems: "center",
+    paddingHorizontal: 20,
+    marginBottom: 16,
   },
-  quickActionIcon: {
+  productsTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: Colors.text,
+  },
+  productCount: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: 16,
+    paddingBottom: 100,
+    gap: 16,
+  },
+  itemWrapper: {
+    width: CARD_WIDTH,
+  },
+  emptyContainer: {
+    flex: 1,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 80,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.text,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    marginBottom: 24,
+    paddingHorizontal: 40,
+  },
+  emptyButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: Colors.primary,
+    borderRadius: 24,
+  },
+  emptyButtonText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  fab: {
+    position: "absolute",
+    bottom: 24,
+    right: 20,
+  },
+  fabGradient: {
     width: 56,
     height: 56,
     borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 8,
-  },
-  quickActionText: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    fontWeight: "500",
-  },
-  itemsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    paddingHorizontal: 20,
-    justifyContent: "space-between",
-  },
-  itemWrapper: {
-    width: (width - 52) / 2,
-    marginBottom: 16,
-  },
-  emptyState: {
-    alignItems: "center",
-    paddingVertical: 40,
-    paddingHorizontal: 20,
-  },
-  emptyStateText: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    textAlign: "center",
-    marginTop: 16,
-    marginBottom: 24,
-  },
-  emptyStateButton: {
-    minWidth: 120,
+    elevation: 8,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
 });

@@ -13,7 +13,7 @@ export class UserRepository implements IUserRepository {
       name: entity.name,
       email: entity.email,
       password: entity.password,
-      roleId: { id: entity.roleId }, // importante para relacionar correctamente
+      roleId: { id: entity.roleId },
     });
 
     return new User(
@@ -87,9 +87,17 @@ export class UserRepository implements IUserRepository {
       updated.name,
       updated.email,
       updated.password,
-      updated.roleId.id, // extrae el número del RoleEntity
+      updated.roleId.id,
       updated.createdAt,
       updated.updatedAt
     );
+  }
+
+  async getPreferences(userId: number): Promise<number[]> {
+    const user = await this.repo.findOne({
+      where: { id: userId },
+      relations: ["preferences", "preferences.category"],
+    });
+    return user?.preferences.map((p) => p.category.id) ?? [];
   }
 }

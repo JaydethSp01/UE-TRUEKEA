@@ -2,6 +2,7 @@ import "reflect-metadata";
 import { createConnection } from "typeorm";
 import config from "./infrastructure/config/default";
 import server from "./infrastructure/web/server";
+import CarbonFootprintHelper from "./infrastructure/web/utils/CarbonFootprintHelper";
 
 async function bootstrap() {
   try {
@@ -16,11 +17,15 @@ async function bootstrap() {
       entities: config.db.entities,
       migrations: config.db.migrations,
     });
+
+    console.log("Cargando datos de CO2...");
+    await CarbonFootprintHelper.loadDataFromDB();
+    console.log("Datos de CO2 cargados exitosamente");
+
     await server.listen(config.app.port);
     console.log(`Servidor corriendo en el puerto ${config.app.port} :)`);
   } catch (error) {
-    console.error(error);
-    console.log();
+    console.error("Error al inicializar la aplicación:", error);
     process.exit(1);
   }
 }

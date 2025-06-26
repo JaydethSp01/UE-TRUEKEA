@@ -1,6 +1,7 @@
 // infrastructure/adapter/typeorm/entities/UserPreferenceEntity.ts
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, ManyToOne } from "typeorm";
 import { UserEntity } from "./UserEntity";
+import { CategoryEntity } from "./CategoryEntity";
 
 @Entity({ name: "user_preferences" })
 export class UserPreferenceEntity {
@@ -10,9 +11,6 @@ export class UserPreferenceEntity {
   @ManyToOne(() => UserEntity, (user) => user.preferences, { eager: true })
   user: UserEntity;
 
-  @Column({ type: "varchar", length: 100 })
-  key: string;
-
-  @Column({ type: "varchar", length: 255 })
-  value: string;
+  @ManyToOne(() => CategoryEntity, { eager: true })
+  category: CategoryEntity;
 }

@@ -4,11 +4,14 @@ import { ItemEntity } from "./ItemEntity";
 
 @Entity({ name: "categories" })
 export class CategoryEntity {
-  @PrimaryGeneratedColumn("increment")
+  @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ type: "varchar", length: 100, unique: true })
   name: string;
+
+  @Column({ type: "double precision", nullable: false })
+  co2: number;
 
   @OneToMany(() => ItemEntity, (item) => item.category)
   items: ItemEntity[];

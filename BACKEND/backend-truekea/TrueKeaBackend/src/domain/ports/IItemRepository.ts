@@ -1,9 +1,11 @@
-// domain/ports/IItemRepository.ts
+import { ItemFilters } from "../../infrastructure/adapter/typeorm/repositories/ItemRepository";
 import { Item } from "../entities/Item";
+
 export interface IItemRepository {
-  create(entity: Item): Promise<Item>;
+  create(item: Item): Promise<Item>;
   findById(id: number): Promise<Item | null>;
-  findAll(): Promise<Item[]>;
-  update(entity: Item): Promise<Item>;
+  findAll(filters?: ItemFilters): Promise<Item[]>;
+  update(item: Item): Promise<Item>;
   delete(id: number): Promise<void>;
+  findByCategoryIds(ids: number[]): Promise<Item[]>;
 }

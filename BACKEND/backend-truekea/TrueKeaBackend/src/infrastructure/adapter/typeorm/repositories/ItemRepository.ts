@@ -1,11 +1,19 @@
 // infrastructure/adapter/typeorm/repositories/ItemRepository.ts
-import { getRepository, Repository } from "typeorm";
 import { ItemEntity } from "../entities/ItemEntity";
 import { IItemRepository } from "../../../../domain/ports/IItemRepository";
 import { Item } from "../../../../domain/entities/Item";
+import { getRepository, In, MoreThanOrEqual, LessThanOrEqual } from "typeorm";
+import CarbonFootprintHelper from "../../../web/utils/CarbonFootprintHelper";
+
+export interface ItemFilters {
+  categoryIds?: number[];
+  minCo2?: number;
+  maxCo2?: number;
+  nameRegex?: string;
+}
 
 export class ItemRepository implements IItemRepository {
-  private repo: Repository<ItemEntity>;
+  private repo = getRepository(ItemEntity);
 
   constructor() {
     this.repo = getRepository(ItemEntity);
@@ -62,27 +70,90 @@ export class ItemRepository implements IItemRepository {
     }
   }
 
-  async findAll(): Promise<Item[]> {
-    try {
-      const entities = await this.repo.find({
-        relations: ["category", "owner"],
+  async findAll(filters: ItemFilters = {}): Promise<Item[]> {
+    const qb = this.repo
+      .createQueryBuilder("item")
+      .leftJoinAndSelect("item.category", "category")
+      .leftJoinAndSelect("item.owner", "owner")
+      .leftJoin("item.requestedSwaps", "rs")
+      .leftJoin("rs.ratings", "rr")
+      .leftJoin("item.offeredSwaps", "os")
+      .leftJoin("os.ratings", "or")
+      // compute the average of all swap ratings, whether on requested or offered swaps
+      .addSelect(
+        `AVG(
+           COALESCE(rr.score, 0) + COALESCE(or.score, 0)
+         ) / NULLIF(
+           (COUNT(rr.id) + COUNT(or.id)),
+           0
+         )`,
+        "avgRating"
+      )
+      .groupBy("item.id")
+      .addGroupBy("category.id")
+      .addGroupBy("owner.id");
+
+    if (filters.categoryIds?.length) {
+      qb.andWhere("category.id IN (:...categoryIds)", {
+        categoryIds: filters.categoryIds,
+      });
+    }
+    if (filters.minCo2 !== undefined) {
+      qb.andWhere("category.co2 >= :minCo2", { minCo2: filters.minCo2 });
+    }
+    if (filters.maxCo2 !== undefined) {
+      qb.andWhere("category.co2 <= :maxCo2", { maxCo2: filters.maxCo2 });
+    }
+    if (filters.nameRegex) {
+      qb.andWhere("item.title ~* :regex", { regex: filters.nameRegex });
+    }
+
+    // get both raw and entity results
+    const { entities, raw } = await qb.getRawAndEntities();
+
+    return entities.map((e, i) => {
+      const row = raw[i] as { avgRating: string | null };
+
+      const co2Unit = CarbonFootprintHelper.getProductCO2(e.category.name) || 0;
+      const co2Total = co2Unit;
+      const co2Equivalencies =
+        CarbonFootprintHelper.calculateEquivalencies(co2Total);
+
+      // Nos aseguramos de que los arrays existan
+      const requestedSwaps = e.requestedSwaps ?? [];
+      const offeredSwaps = e.offeredSwaps ?? [];
+      const allSwaps = [...requestedSwaps, ...offeredSwaps];
+
+      let status: "available" | "pending" | "exchanged" = "available";
+      if (allSwaps.some((s) => s.status === "pending")) status = "pending";
+      else if (allSwaps.some((s) => s.status === "completed"))
+        status = "exchanged";
+
+      const item = new Item(
+        e.id,
+        e.title,
+        e.description,
+        Number(e.value),
+        e.category.id,
+        e.owner.id,
+        e.img_item
+      );
+
+      Object.assign(item, {
+        category: e.category,
+        owner: e.owner,
+        co2Unit,
+        co2Total,
+        co2Equivalencies,
+        status,
+        rating:
+          row.avgRating !== null
+            ? Math.round(parseFloat(row.avgRating) * 10) / 10
+            : 0,
       });
 
-      return entities.map(
-        (e) =>
-          new Item(
-            e.id,
-            e.title,
-            e.description,
-            e.value,
-            e.category.id,
-            e.owner.id,
-            e.img_item
-          )
-      );
-    } catch {
-      return [];
-    }
+      return item;
+    });
   }
 
   async update(item: Item): Promise<Item> {
@@ -121,5 +192,27 @@ export class ItemRepository implements IItemRepository {
     } catch {
       throw new Error("Error deleting item");
     }
+  }
+
+  async findByCategoryIds(ids: number[]): Promise<Item[]> {
+    const entities = await this.repo
+      .createQueryBuilder("i")
+      .leftJoinAndSelect("i.category", "category")
+      .leftJoinAndSelect("i.owner", "owner")
+      .where("i.categoryId IN (:...ids)", { ids })
+      .getMany();
+
+    return entities.map(
+      (e) =>
+        new Item(
+          e.id,
+          e.title,
+          e.description,
+          Number(e.value),
+          e.category.id,
+          e.owner.id,
+          e.img_item
+        )
+    );
   }
 }

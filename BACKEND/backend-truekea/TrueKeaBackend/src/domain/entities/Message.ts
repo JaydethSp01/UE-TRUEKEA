@@ -4,8 +4,9 @@ export class Message {
     public id: number,
     public senderId: number,
     public receiverId: number,
+    public itemId: number,
     public content: string,
-    public timestamp: Date
+    public createdAt?: Date
   ) {
     [senderId, receiverId].forEach((id) => {
       if (!Number.isInteger(id) || id <= 0) throw new Error("Invalid user ID");

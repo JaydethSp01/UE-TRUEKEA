@@ -10,7 +10,7 @@ router.post("/", upload.single("image"), (req, res, next) => {
   ItemController.create(req, res).catch(next);
 });
 
-router.get("/", (req, res, next) => {
+router.post("/list", (req, res, next) => {
   ItemController.list(req, res).catch(next);
 });
 

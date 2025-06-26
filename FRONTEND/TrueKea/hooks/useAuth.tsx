@@ -1,107 +1,154 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
-import { Alert } from "react-native";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter } from "expo-router";
+import api from "../services/api";
 
-interface User {
-  email: string;
-}
-
-interface AuthContextType {
-  user: User | null;
-  loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-}
-
-const TEST_EMAIL = "testtruekea.com";
-const TEST_PASS = "password123";
-const USER_KEY = "@truekea_user";
-
-const initialAuthContext: AuthContextType = {
-  user: null,
-  loading: true,
-  login: async () => {},
-  register: async () => {},
-  logout: async () => {},
+type AuthResponse = {
+  token: string;
+  refreshToken: string;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    roleId: number;
+    statusUser: string;
+    preferences: number[];
+  };
+  categoriesIfNoPrefs: { id: number; name: string }[];
+  initialItems: {
+    id: number;
+    title: string;
+    categoryId: number;
+    co2Unit: number;
+    co2Total: number;
+  }[];
+  initialCO2: {
+    totalCO2: number;
+    treesNeeded: number;
+    carKilometers: number;
+    lightBulbHours: number;
+    flightMinutes: number;
+  };
 };
 
-const AuthContext = createContext<AuthContextType>(initialAuthContext);
+type AuthContextType = {
+  user: AuthResponse["user"] | null;
+  items: AuthResponse["initialItems"];
+  co2: AuthResponse["initialCO2"];
+  categoriesIfNoPrefs: AuthResponse["categoriesIfNoPrefs"];
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
+  loading: boolean;
+};
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({
+const AuthContext = createContext<AuthContextType>({} as any);
+
+export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
   children,
 }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthResponse["user"] | null>(null);
+  const [items, setItems] = useState<AuthResponse["initialItems"]>([]);
+  const [co2, setCO2] = useState<AuthResponse["initialCO2"]>({
+    totalCO2: 0,
+    treesNeeded: 0,
+    carKilometers: 0,
+    lightBulbHours: 0,
+    flightMinutes: 0,
+  });
+  const [categoriesIfNoPrefs, setCategoriesIfNoPrefs] = useState<
+    AuthResponse["categoriesIfNoPrefs"]
+  >([]);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
-    const loadUser = async () => {
+    const initializeAuth = async () => {
       try {
-        const json = await AsyncStorage.getItem(USER_KEY);
-        if (json) {
-          const parsed = JSON.parse(json) as User;
-          setUser(parsed);
+        const token = await AsyncStorage.getItem("token");
+        if (token) {
+          api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+          try {
+            const res = await api.post<AuthResponse>("/auth/refresh");
+            await AsyncStorage.setItem("token", res.data.token);
+            api.defaults.headers.common[
+              "Authorization"
+            ] = `Bearer ${res.data.token}`;
+            setUser(res.data.user);
+            setItems(res.data.initialItems);
+            setCO2(res.data.initialCO2);
+            setCategoriesIfNoPrefs(res.data.categoriesIfNoPrefs);
+          } catch {
+            await AsyncStorage.removeItem("token");
+            delete api.defaults.headers.common["Authorization"];
+          }
         }
-      } catch (e) {
-        console.error("Error loading user from storage", e);
       } finally {
         setLoading(false);
       }
     };
-    loadUser();
+    initializeAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
-    if (email !== TEST_EMAIL || password !== TEST_PASS) {
-      return Alert.alert("Error", "Credenciales inválidas");
+    const response = await api.post<AuthResponse>("/auth/login", {
+      email,
+      password,
+    });
+    if (!response.data || !response.data.token) {
+      throw new Error("Respuesta inválida del servidor");
     }
-    const simulatedUser: User = { email };
-    try {
-      await AsyncStorage.setItem(USER_KEY, JSON.stringify(simulatedUser));
-      setUser(simulatedUser);
-      router.replace("/preferences");
-    } catch (e) {
-      console.error("Error on login", e);
-      Alert.alert("Error", "No se pudo iniciar sesión");
-    }
+    await AsyncStorage.setItem("token", response.data.token);
+    api.defaults.headers.common[
+      "Authorization"
+    ] = `Bearer ${response.data.token}`;
+    setUser(response.data.user);
+    setItems(response.data.initialItems || []);
+    setCO2(
+      response.data.initialCO2 || {
+        totalCO2: 0,
+        treesNeeded: 0,
+        carKilometers: 0,
+        lightBulbHours: 0,
+        flightMinutes: 0,
+      }
+    );
+    setCategoriesIfNoPrefs(response.data.categoriesIfNoPrefs || []);
   };
 
-  const register = async (email: string, password: string) => {
-    // Registro deshabilitado para este demo
-    return Alert.alert(
-      "Registro",
-      "Registro no disponible en esta versión de prueba"
-    );
+  const register = async (name: string, email: string, password: string) => {
+    await api.post("/users", { name, email, password, roleId: 2 });
   };
 
   const logout = async () => {
-    try {
-      await AsyncStorage.removeItem(USER_KEY);
-      setUser(null);
-      router.replace("/login");
-    } catch (e) {
-      console.error("Error on logout", e);
-      Alert.alert("Error", "No se pudo cerrar sesión");
-    }
+    await AsyncStorage.removeItem("token");
+    delete api.defaults.headers.common["Authorization"];
+    setUser(null);
+    setItems([]);
+    setCO2({
+      totalCO2: 0,
+      treesNeeded: 0,
+      carKilometers: 0,
+      lightBulbHours: 0,
+      flightMinutes: 0,
+    });
+    setCategoriesIfNoPrefs([]);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        items,
+        co2,
+        categoriesIfNoPrefs,
+        login,
+        logout,
+        register,
+        loading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within AuthProvider");
-  return context;
-};
+export const useAuth = () => useContext(AuthContext);

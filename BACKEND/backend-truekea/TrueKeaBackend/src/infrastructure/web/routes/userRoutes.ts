@@ -10,9 +10,13 @@ router.post("/", (req: Request, res: Response, next: NextFunction) => {
   UserController.register(req, res).catch(next);
 });
 
-router.get("/stats", (req: Request, res: Response, next: NextFunction) => {
-  UserController.listStats(req, res).catch(next);
-});
+router.get(
+  "/stats",
+  authMiddleware,
+  (req: Request, res: Response, next: NextFunction) => {
+    UserController.listStats(req, res).catch(next);
+  }
+);
 
 router.put(
   "/",

@@ -7,7 +7,8 @@ export class User {
     public password: string,
     public roleId: number,
     public createdAt: Date,
-    public updatedAt: Date
+    public updatedAt: Date,
+    public status_user: string = "active"
   ) {
     if (!name.trim()) throw new Error("Name required");
     if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))

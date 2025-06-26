@@ -1,3 +1,4 @@
+// components/ItemCard.tsx
 import React from "react";
 import {
   View,
@@ -8,349 +9,176 @@ import {
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors } from "@/constants/Colors";
-import { getCategoryById, getConditionById } from "@/constants/Categories";
-import { Item } from "../types/Item";
-import { ViewStyle, StyleProp } from "react-native";
+import { Colors } from "../constants/Colors";
+import { LinearGradient } from "expo-linear-gradient";
+
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 48) / 2;
 
-interface ItemCardProps {
-  item: Item;
-  onPress: (item: Item) => void;
-  variant?: "grid" | "list";
-  showUserInfo?: boolean;
-  style?: StyleProp<ViewStyle>;
+export interface Item {
+  id: number;
+  title: string;
+  description: string;
+  value: number;
+  img_item: string;
+  category: {
+    id: number;
+    name: string;
+  };
+  owner: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  createdAt: string;
+  updatedAt: string;
 }
 
-export const ItemCard: React.FC<ItemCardProps> = ({
-  item,
-  onPress,
-  variant = "grid",
-  showUserInfo = true,
-}) => {
-  const category = getCategoryById(item.category);
-  const condition = getConditionById(item.condition);
+interface ItemCardProps {
+  item: Item;
+  onPress: () => void;
+}
 
-  // valores por defecto si vienen undefined
-  const status = item.status ?? "available";
-  const rating = item.userRating ?? 0;
-
-  const getStatusColor = () => {
-    switch (status) {
-      case "available":
-        return Colors.success;
-      case "pending":
-        return Colors.warning;
-      case "exchanged":
-        return Colors.textLight;
-      default:
-        return Colors.textLight;
-    }
-  };
-
-  const getStatusText = () => {
-    switch (status) {
-      case "available":
-        return "Disponible";
-      case "pending":
-        return "Pendiente";
-      case "exchanged":
-        return "Intercambiado";
-      default:
-        return "Desconocido";
-    }
-  };
-
-  const GridCard = () => (
+export const ItemCard: React.FC<ItemCardProps> = ({ item, onPress }) => {
+  return (
     <TouchableOpacity
-      style={[styles.gridCard, Colors.cardShadow]}
-      onPress={() => onPress(item)}
-      activeOpacity={0.8}
+      style={styles.container}
+      onPress={onPress}
+      activeOpacity={0.9}
     >
-      <View style={styles.imageContainer}>
-        <Image
-          source={{ uri: item.images[0] }}
-          style={styles.gridImage}
-          resizeMode="cover"
-        />
-        <View style={styles.statusBadge}>
-          <View
-            style={[styles.statusDot, { backgroundColor: getStatusColor() }]}
+      <View style={styles.card}>
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ uri: item.img_item || "https://via.placeholder.com/150" }}
+            style={styles.image}
+            resizeMode="cover"
           />
-        </View>
-        {category && (
-          <View
-            style={[styles.categoryBadge, { backgroundColor: category.color }]}
-          >
-            <Text style={styles.categoryText}>{category.name}</Text>
+          <LinearGradient
+            colors={["transparent", "rgba(0,0,0,0.3)"]}
+            style={styles.imageGradient}
+          />
+          <View style={styles.categoryBadge}>
+            <Text style={styles.categoryText}>{item.category.name}</Text>
           </View>
-        )}
-      </View>
-
-      <View style={styles.cardContent}>
-        <Text style={styles.title} numberOfLines={2}>
-          {item.title}
-        </Text>
-
-        <View style={styles.conditionContainer}>
-          {condition && (
-            <View
-              style={[
-                styles.conditionBadge,
-                { backgroundColor: condition.color + "20" },
-              ]}
-            >
-              <Text style={[styles.conditionText, { color: condition.color }]}>
-                {condition.name}
-              </Text>
-            </View>
-          )}
         </View>
 
-        {showUserInfo && (
-          <View style={styles.userInfo}>
-            <Ionicons
-              name="person-circle"
-              size={16}
-              color={Colors.textSecondary}
-            />
-            <Text style={styles.userName} numberOfLines={1}>
-              {item.userName}
-            </Text>
-            <View style={styles.ratingContainer}>
-              <Ionicons name="star" size={12} color={Colors.warning} />
-              <Text style={styles.rating}>{rating.toFixed(1)}</Text>
-            </View>
-          </View>
-        )}
-
-        <View style={styles.locationContainer}>
-          <Ionicons name="location" size={12} color={Colors.textLight} />
-          <Text style={styles.location} numberOfLines={1}>
-            {item.location}
-          </Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-
-  const ListCard = () => (
-    <TouchableOpacity
-      style={[styles.listCard, Colors.cardShadow]}
-      onPress={() => onPress(item)}
-      activeOpacity={0.8}
-    >
-      <Image
-        source={{ uri: item.images[0] }}
-        style={styles.listImage}
-        resizeMode="cover"
-      />
-
-      <View style={styles.listContent}>
-        <View style={styles.listHeader}>
-          <Text style={styles.title} numberOfLines={1}>
+        <View style={styles.content}>
+          <Text style={styles.title} numberOfLines={2}>
             {item.title}
           </Text>
-          <View
-            style={[styles.statusDot, { backgroundColor: getStatusColor() }]}
-          />
-        </View>
 
-        <Text style={styles.description} numberOfLines={2}>
-          {item.description}
-        </Text>
-
-        <View style={styles.listMeta}>
-          {category && (
-            <View
-              style={[
-                styles.categoryBadge,
-                { backgroundColor: category.color },
-              ]}
-            >
-              <Text style={styles.categoryText}>{category.name}</Text>
-            </View>
-          )}
-          {condition && (
-            <View
-              style={[
-                styles.conditionBadge,
-                { backgroundColor: condition.color + "20" },
-              ]}
-            >
-              <Text style={[styles.conditionText, { color: condition.color }]}>
-                {condition.name}
+          <View style={styles.ownerRow}>
+            <View style={styles.ownerAvatar}>
+              <Text style={styles.ownerInitial}>
+                {item.owner.name.charAt(0).toUpperCase()}
               </Text>
             </View>
-          )}
-        </View>
-
-        {showUserInfo && (
-          <View style={styles.listUserInfo}>
-            <View style={styles.userInfo}>
-              <Ionicons
-                name="person-circle"
-                size={14}
-                color={Colors.textSecondary}
-              />
-              <Text style={styles.userName}>{item.userName}</Text>
-              <View style={styles.ratingContainer}>
-                <Ionicons name="star" size={12} color={Colors.warning} />
-                <Text style={styles.rating}>{rating.toFixed(1)}</Text>
-              </View>
-            </View>
-            <View style={styles.locationContainer}>
-              <Ionicons name="location" size={12} color={Colors.textLight} />
-              <Text style={styles.location} numberOfLines={1}>
-                {item.location}
-              </Text>
-            </View>
+            <Text style={styles.ownerName} numberOfLines={1}>
+              {item.owner.name}
+            </Text>
           </View>
-        )}
+
+          <View style={styles.footer}>
+            <View style={styles.valueContainer}>
+              <Ionicons name="leaf" size={14} color={Colors.success} />
+              <Text style={styles.co2Text}>{item.value} kg CO₂</Text>
+            </View>
+            <Ionicons name="arrow-forward" size={18} color={Colors.primary} />
+          </View>
+        </View>
       </View>
     </TouchableOpacity>
   );
-
-  return variant === "grid" ? <GridCard /> : <ListCard />;
 };
 
 const styles = StyleSheet.create({
-  gridCard: {
+  container: {
     width: CARD_WIDTH,
-    backgroundColor: Colors.card,
-    borderRadius: 12,
-    marginBottom: 16,
-    overflow: "hidden",
   },
-  listCard: {
-    flexDirection: "row",
+  card: {
     backgroundColor: Colors.card,
-    borderRadius: 12,
-    marginBottom: 12,
+    borderRadius: 16,
     overflow: "hidden",
-    height: 120,
+    ...Colors.cardShadow,
   },
   imageContainer: {
     position: "relative",
+    height: CARD_WIDTH * 1.2,
+    backgroundColor: Colors.surface,
   },
-  gridImage: {
+  image: {
     width: "100%",
-    height: 140,
+    height: "100%",
   },
-  listImage: {
-    width: 100,
-    height: 120,
-  },
-  statusBadge: {
+  imageGradient: {
     position: "absolute",
-    top: 8,
-    right: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    borderRadius: 12,
-    width: 24,
-    height: 24,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 60,
   },
   categoryBadge: {
     position: "absolute",
-    top: 8,
-    left: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    top: 12,
+    left: 12,
+    backgroundColor: Colors.card,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    ...Colors.shadow,
   },
   categoryText: {
-    color: "#FFFFFF",
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "600",
-    textTransform: "uppercase",
+    color: Colors.primary,
   },
-  cardContent: {
-    padding: 12,
-    flex: 1,
-  },
-  listContent: {
-    flex: 1,
-    padding: 12,
-    justifyContent: "space-between",
-  },
-  listHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 4,
+  content: {
+    padding: 16,
   },
   title: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
     color: Colors.text,
-    marginBottom: 4,
-    flex: 1,
+    marginBottom: 12,
+    lineHeight: 20,
   },
-  description: {
+  ownerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  ownerAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.primaryLight,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+  },
+  ownerInitial: {
     fontSize: 12,
+    fontWeight: "600",
+    color: Colors.primary,
+  },
+  ownerName: {
+    fontSize: 13,
     color: Colors.textSecondary,
-    lineHeight: 16,
-    marginBottom: 8,
-  },
-  conditionContainer: {
-    marginBottom: 8,
-  },
-  conditionBadge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  conditionText: {
-    fontSize: 10,
-    fontWeight: "500",
-  },
-  userInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  userName: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    marginLeft: 4,
     flex: 1,
   },
-  ratingContainer: {
+  footer: {
     flexDirection: "row",
-    alignItems: "center",
-    marginLeft: 4,
-  },
-  rating: {
-    fontSize: 10,
-    color: Colors.textSecondary,
-    marginLeft: 2,
-  },
-  locationContainer: {
-    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
   },
-  location: {
-    fontSize: 10,
-    color: Colors.textLight,
-    marginLeft: 4,
-    flex: 1,
-  },
-  listMeta: {
+  valueContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
-    gap: 6,
-  },
-  listUserInfo: {
     gap: 4,
+  },
+  co2Text: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: Colors.success,
   },
 });

@@ -55,6 +55,9 @@ export class UserEntity {
   @OneToMany(() => UserPreferenceEntity, (pref) => pref.user)
   preferences: UserPreferenceEntity[];
 
+  @Column({ type: "varchar", length: 255, default: "active" })
+  status_user: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
