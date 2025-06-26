@@ -56,4 +56,22 @@ export class MessageRepository implements IMessageRepository {
         )
     );
   }
+
+  async getAllByReceiverId(receiverId: number): Promise<Message[]> {
+    const messages = await this.repo.find({
+      where: { receiver: { id: receiverId } },
+      order: { createdAt: "DESC" },
+    });
+    return messages.map(
+      (m) =>
+        new Message(
+          m.id,
+          m.sender.id,
+          m.receiver.id,
+          m.item.id,
+          m.content,
+          m.createdAt
+        )
+    );
+  }
 }

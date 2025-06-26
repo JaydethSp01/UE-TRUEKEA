@@ -3,6 +3,7 @@ import UserController, {
   AuthenticatedRequest,
 } from "../controllers/UserController";
 import { authMiddleware } from "../middlewares/authMiddleware";
+import NotificationsController from "../controllers/NotificationsController";
 
 const router = Router();
 
@@ -39,6 +40,14 @@ router.patch(
     } catch (error) {
       next(error);
     }
+  }
+);
+
+router.get(
+  "/:userId/notifications",
+  authMiddleware,
+  (req, res, next) => {
+    NotificationsController.getUserNotifications(req, res).catch(next);
   }
 );
 

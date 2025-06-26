@@ -7,4 +7,5 @@ export interface IMessageRepository {
     userAId: number,
     userBId: number
   ): Promise<Message[]>;
+  getAllByReceiverId(receiverId: number): Promise<Message[]>;
 }
