@@ -1,24 +1,24 @@
-import React, { useState, useEffect } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { Href, useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-  StyleSheet,
-  Dimensions,
-  ActivityIndicator,
-  Alert,
-  Modal,
+    ActivityIndicator,
+    Alert,
+    Dimensions,
+    Image,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter, useLocalSearchParams, Href } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
-import { Colors } from "../../constants/Colors";
-import api from "../../services/api";
-import { useAuth } from "../../hooks/useAuth";
 import { Item } from "../../components/ItemCard";
+import { Colors } from "../../constants/Colors";
+import { useAuth } from "../../hooks/useAuth";
+import api from "../../services/api";
 
 const { width, height } = Dimensions.get("window");
 
@@ -145,7 +145,7 @@ export default function ItemDetailScreen() {
 
   const handleProfilePress = () => {
     if (!item?.owner?.id) return;
-    const profileRoute = `/profile/${item.owner.id}` as Href;
+    const profileRoute = `/profile/${item.owner.id}` as `/profile/[userId]`;
     router.push(profileRoute);
   };
 

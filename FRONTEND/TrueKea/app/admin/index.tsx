@@ -101,7 +101,7 @@ export default function AdminDashboard() {
       setLoading(true);
 
       const [usersRes, itemsRes, swapsRes, categoriesRes] = await Promise.all([
-        api.get("/users/"),
+        api.get("/users"),
         api.post("/items/list"),
         api.get("/admin/swaps/"),
         api.get("/categories"),

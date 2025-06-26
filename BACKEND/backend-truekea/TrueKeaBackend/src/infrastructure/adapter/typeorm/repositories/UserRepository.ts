@@ -17,20 +17,31 @@ export class UserRepository implements IUserRepository {
       status_user: entity.status_user,
     });
 
+    // Reload to get the full entity with relations
+    const reloaded = await this.repo.findOne({
+      where: { id: saved.id },
+      relations: ["roleId"],
+    });
+
+    if (!reloaded) throw new Error("Failed to create user");
+
     return new User(
-      saved.id,
-      saved.name,
-      saved.email,
-      saved.password,
-      saved.roleId.id,
-      saved.createdAt,
-      saved.updatedAt,
-      saved.status_user
+      reloaded.id,
+      reloaded.name,
+      reloaded.email,
+      reloaded.password,
+      reloaded.roleId.id,
+      reloaded.createdAt,
+      reloaded.updatedAt,
+      reloaded.status_user
     );
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    const found = await this.repo.findOne({ where: { email } });
+    const found = await this.repo.findOne({
+      where: { email },
+      relations: ["roleId"],
+    });
     if (!found) return null;
 
     return new User(
@@ -46,7 +57,10 @@ export class UserRepository implements IUserRepository {
   }
 
   async findById(id: number): Promise<User | null> {
-    const found = await this.repo.findOne({ where: { id } });
+    const found = await this.repo.findOne({
+      where: { id },
+      relations: ["roleId"],
+    });
     if (!found) return null;
 
     return new User(
@@ -62,7 +76,9 @@ export class UserRepository implements IUserRepository {
   }
 
   async findAll(): Promise<User[]> {
-    const all = await this.repo.find();
+    const all = await this.repo.find({
+      relations: ["roleId"],
+    });
     return all.map(
       (u) =>
         new User(
@@ -88,15 +104,23 @@ export class UserRepository implements IUserRepository {
       status_user: entity.status_user,
     });
 
+    // Reload to get the full entity with relations
+    const reloaded = await this.repo.findOne({
+      where: { id: updated.id },
+      relations: ["roleId"],
+    });
+
+    if (!reloaded) throw new Error("Failed to update user");
+
     return new User(
-      updated.id,
-      updated.name,
-      updated.email,
-      updated.password,
-      updated.roleId.id,
-      updated.createdAt,
-      updated.updatedAt,
-      updated.status_user
+      reloaded.id,
+      reloaded.name,
+      reloaded.email,
+      reloaded.password,
+      reloaded.roleId.id,
+      reloaded.createdAt,
+      reloaded.updatedAt,
+      reloaded.status_user
     );
   }
 

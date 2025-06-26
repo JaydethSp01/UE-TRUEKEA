@@ -232,6 +232,16 @@ class ApiService {
   patch<T = any>(url: string, data?: any) {
     return this.api.patch<T>(url, data);
   }
+
+  async getUserConversations(userId: number) {
+    const response = await this.api.get(`/messages/conversations`, { params: { userId } });
+    return response.data;
+  }
+
+  async setUserPreferencesBulk(userId: number, categoryIds: number[]) {
+    const response = await this.api.post("/user/preferences/bulk", { userId, categoryIds });
+    return response.data;
+  }
 }
 
 export default new ApiService();

@@ -1,17 +1,17 @@
 // app/onboarding.tsx
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { ButtonPrimary } from "../components/ButtonPrimary";
+import { Colors } from "../constants/Colors";
 import { useAuth } from "../hooks/useAuth";
 import api from "../services/api";
-import { Colors } from "../constants/Colors";
-import { ButtonPrimary } from "../components/ButtonPrimary";
 
 export default function OnboardingScreen() {
   const { user, categoriesIfNoPrefs } = useAuth();
@@ -25,11 +25,8 @@ export default function OnboardingScreen() {
   };
 
   const submit = async () => {
-    await api.post("/user/preferences/bulk", {
-      userId: user!.id,
-      categoryIds: selected,
-    });
-    router.replace("/");
+    await api.setUserPreferencesBulk(user!.id, selected);
+    router.replace('/' as any);
   };
 
   return (
