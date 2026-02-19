@@ -41,7 +41,7 @@ export default function NotificationsScreen() {
     if (!user?.id) return;
     try {
       setLoading(true);
-      const { data } = await api.get(`users/${user.id}/notifications`);
+      const { data } = await api.get(`/users/${user.id}/notifications`);
 
       // Mapea mensajes a tu interfaz Notification
       const messageNotifs: Notification[] = data.messages.map((m: any) => ({

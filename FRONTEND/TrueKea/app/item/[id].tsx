@@ -69,8 +69,9 @@ export default function ItemDetailScreen() {
   const loadItem = async () => {
     try {
       setLoading(true);
-      const res = await api.get<Item>(`/items/${id}`);
-      setItem(res.data);
+      const res = await api.get<{ item?: Item } | Item>(`/items/${id}`);
+      const data = res.data as any;
+      setItem(data?.item ?? data);
     } catch (error) {
       Alert.alert("Error", "No se pudo cargar el producto");
     } finally {

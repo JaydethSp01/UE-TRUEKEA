@@ -26,10 +26,11 @@ export default {
 
   async list(req: Request, res: Response) {
     const filters: ListItemsFilters = {
-      categoryIds: req.body.categoryIds,
-      minCo2: req.body.minCo2,
-      maxCo2: req.body.maxCo2,
-      nameRegex: req.body.nameRegex,
+      categoryIds: req.body?.categoryIds,
+      minCo2: req.body?.minCo2,
+      maxCo2: req.body?.maxCo2,
+      nameRegex: req.body?.nameRegex,
+      ownerId: req.body?.ownerId != null ? Number(req.body.ownerId) : undefined,
     };
     try {
       const items = await new ListItems().execute(filters);
@@ -42,8 +43,8 @@ export default {
   async getbyId(req: Request, res: Response) {
     try {
       const id = parseInt(req.params.id, 10);
-      const items = await new GetItemById().execute(id);
-      res.json(items);
+      const item = await new GetItemById().execute(id);
+      res.json({ item });
     } catch (err: any) {
       res.status(400).json({ message: err.message });
     }

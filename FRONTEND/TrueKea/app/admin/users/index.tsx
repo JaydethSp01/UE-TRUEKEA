@@ -105,7 +105,11 @@ export default function AdminUsersScreen() {
           style: newStatus === "inactive" ? "destructive" : "default",
           onPress: async () => {
             try {
-              await api.patch(`/users/${user.id}/deactivate`);
+              if (newStatus === "inactive") {
+                await api.patch(`/users/${user.id}/deactivate`);
+              } else {
+                await api.patch(`/users/${user.id}/activate`);
+              }
               await loadUsers();
               Alert.alert(
                 "Éxito",

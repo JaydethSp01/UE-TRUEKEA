@@ -278,7 +278,7 @@ export default function SwapsTab() {
           {item.status === "completed" && (
             <TouchableOpacity
               style={[styles.actionButton, styles.rateButton]}
-              onPress={() => router.push("/rating")}
+              onPress={() => router.push(`/rating?swapId=${item.id}`)}
             >
               <Ionicons name="star" size={20} color="white" />
               <Text style={styles.actionButtonText}>Calificar intercambio</Text>

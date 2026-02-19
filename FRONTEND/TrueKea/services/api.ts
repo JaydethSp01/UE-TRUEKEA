@@ -102,7 +102,7 @@ class ApiService {
     password: string;
     roleId?: number;
   }) {
-    const response = await this.api.post<AuthResponse>("/users", {
+    const response = await this.api.post<AuthResponse>("/auth/register", {
       ...data,
       roleId: data.roleId || 2,
     });
@@ -123,7 +123,7 @@ class ApiService {
     return response.data;
   }
   async getItems() {
-    const response = await this.api.get("/items");
+    const response = await this.api.post("/items/list", {});
     return response.data;
   }
   async getItem(id: string | number) {
@@ -210,10 +210,25 @@ class ApiService {
     const response = await this.api.get("/users/stats");
     return response.data;
   }
+  async getUserStatsByUserId(userId: number) {
+    const response = await this.api.get(`/users/${userId}/stats`);
+    return response.data;
+  }
   async updateProfile(
-    data: Partial<{ name: string; email: string; password: string }>
+    data: Partial<{
+      name: string;
+      email: string;
+      password: string;
+      phone?: string;
+      location?: string;
+      bio?: string;
+    }>
   ) {
     const response = await this.api.put("/users", data);
+    return response.data;
+  }
+  async getTopUsers(limit = 10) {
+    const response = await this.api.get("/users/top", { params: { limit } });
     return response.data;
   }
 

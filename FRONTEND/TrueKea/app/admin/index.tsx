@@ -113,7 +113,7 @@ export default function AdminDashboard() {
       const categories = categoriesRes.data;
 
       const activeUsers = users.filter(
-        (u: any) => u.status === "active"
+        (u: any) => u.status_user === "active"
       ).length;
       const availableItems = items.filter(
         (i: any) => i.status === "available"

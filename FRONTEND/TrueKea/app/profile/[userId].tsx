@@ -55,20 +55,17 @@ export default function UserProfileScreen() {
       setLoading(true);
 
       // Cargar datos del usuario
-      const userRes = await api.get(`/users/${userId}`);
-      const itemsRes = await api.post("/items/list", {
-        ownerId: Number(userId),
-      });
+      const [userRes, itemsRes, statsRes] = await Promise.all([
+        api.get(`/users/${userId}`),
+        api.post("/items/list", { ownerId: Number(userId) }),
+        api.getUserStatsByUserId(Number(userId)),
+      ]);
 
-      // Simular estadísticas (en producción vendrían del backend)
       const stats = {
-        totalItems: itemsRes.data.length,
-        completedSwaps: Math.floor(Math.random() * 50),
-        totalCO2Saved: itemsRes.data.reduce(
-          (sum: number, item: any) => sum + (item.value || 0),
-          0
-        ),
-        rating: 4.5 + Math.random() * 0.5,
+        totalItems: statsRes.totalItems ?? itemsRes.data.length,
+        completedSwaps: statsRes.completedSwaps ?? 0,
+        totalCO2Saved: statsRes.totalCO2Saved ?? 0,
+        rating: statsRes.rating ?? 0,
       };
 
       setProfile({

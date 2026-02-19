@@ -60,7 +60,7 @@ export default function AdminRolesScreen() {
   const loadRoles = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/admin/roles");
+      const response = await api.get("/roles");
       setRoles(response.data);
     } catch (error) {
       Alert.alert("Error", "No se pudieron cargar los roles");
@@ -118,10 +118,10 @@ export default function AdminRolesScreen() {
 
     try {
       if (editingRole) {
-        await api.put(`/admin/roles/${editingRole.id}`, { name: formData.name });
+        await api.put(`/roles/${editingRole.id}`, { name: formData.name });
         Alert.alert("Éxito", "Rol actualizado correctamente");
       } else {
-        await api.post("/admin/roles", { name: formData.name });
+        await api.post("/roles", { name: formData.name });
         Alert.alert("Éxito", "Rol creado correctamente");
       }
 
@@ -151,7 +151,7 @@ export default function AdminRolesScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              await api.delete(`/admin/roles/${role.id}`);
+              await api.delete(`/roles/${role.id}`);
               await loadRoles();
               Alert.alert("Éxito", "Rol eliminado correctamente");
             } catch (error) {

@@ -131,10 +131,10 @@ export default function AdminCategoriesScreen() {
       };
 
       if (editingCategory) {
-        await api.put(`/admin/categories/${editingCategory.id}`, data);
+        await api.put(`/categories/${editingCategory.id}`, data);
         Alert.alert("Éxito", "Categoría actualizada correctamente");
       } else {
-        await api.post("/admin/categories", data);
+        await api.post("/categories", data);
         Alert.alert("Éxito", "Categoría creada correctamente");
       }
 
@@ -156,7 +156,7 @@ export default function AdminCategoriesScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              await api.delete(`/admin/categories/${category.id}`);
+              await api.delete(`/categories/${category.id}`);
               await loadCategories();
               Alert.alert("Éxito", "Categoría eliminada correctamente");
             } catch (error) {

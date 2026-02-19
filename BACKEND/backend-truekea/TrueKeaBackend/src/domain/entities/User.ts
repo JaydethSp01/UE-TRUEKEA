@@ -8,7 +8,10 @@ export class User {
     public roleId: number,
     public createdAt: Date,
     public updatedAt: Date,
-    public status_user: string = "active"
+    public status_user: string = "active",
+    public phone?: string | null,
+    public location?: string | null,
+    public bio?: string | null
   ) {
     if (!name.trim()) throw new Error("Name required");
     if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))

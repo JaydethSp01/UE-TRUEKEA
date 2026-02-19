@@ -26,7 +26,7 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="AddItem" />
         <Stack.Screen name="item/[id]" />
-        <Stack.Screen name="chat/[userId]" />
+        <Stack.Screen name="chat/[id]" />
         <Stack.Screen name="profile/[userId]" />
         <Stack.Screen name="requests" />
         <Stack.Screen name="rating" />

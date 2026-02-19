@@ -15,6 +15,9 @@ export class UserRepository implements IUserRepository {
       password: entity.password,
       roleId: { id: entity.roleId },
       status_user: entity.status_user,
+      phone: entity.phone ?? null,
+      location: entity.location ?? null,
+      bio: entity.bio ?? null,
     });
 
     // Reload to get the full entity with relations
@@ -33,7 +36,10 @@ export class UserRepository implements IUserRepository {
       reloaded.roleId.id,
       reloaded.createdAt,
       reloaded.updatedAt,
-      reloaded.status_user
+      reloaded.status_user,
+      reloaded.phone ?? undefined,
+      reloaded.location ?? undefined,
+      reloaded.bio ?? undefined
     );
   }
 
@@ -52,7 +58,10 @@ export class UserRepository implements IUserRepository {
       found.roleId.id,
       found.createdAt,
       found.updatedAt,
-      found.status_user
+      found.status_user,
+      found.phone ?? undefined,
+      found.location ?? undefined,
+      found.bio ?? undefined
     );
   }
 
@@ -71,7 +80,10 @@ export class UserRepository implements IUserRepository {
       found.roleId.id,
       found.createdAt,
       found.updatedAt,
-      found.status_user
+      found.status_user,
+      found.phone ?? undefined,
+      found.location ?? undefined,
+      found.bio ?? undefined
     );
   }
 
@@ -89,7 +101,10 @@ export class UserRepository implements IUserRepository {
           u.roleId.id,
           u.createdAt,
           u.updatedAt,
-          u.status_user
+          u.status_user,
+          u.phone ?? undefined,
+          u.location ?? undefined,
+          u.bio ?? undefined
         )
     );
   }
@@ -102,6 +117,9 @@ export class UserRepository implements IUserRepository {
       password: entity.password,
       roleId: { id: entity.roleId },
       status_user: entity.status_user,
+      phone: entity.phone ?? null,
+      location: entity.location ?? null,
+      bio: entity.bio ?? null,
     });
 
     // Reload to get the full entity with relations
@@ -120,7 +138,10 @@ export class UserRepository implements IUserRepository {
       reloaded.roleId.id,
       reloaded.createdAt,
       reloaded.updatedAt,
-      reloaded.status_user
+      reloaded.status_user,
+      reloaded.phone ?? undefined,
+      reloaded.location ?? undefined,
+      reloaded.bio ?? undefined
     );
   }
 

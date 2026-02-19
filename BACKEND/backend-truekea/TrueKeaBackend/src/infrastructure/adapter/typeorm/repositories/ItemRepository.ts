@@ -10,6 +10,7 @@ export interface ItemFilters {
   minCo2?: number;
   maxCo2?: number;
   nameRegex?: string;
+  ownerId?: number;
 }
 
 export class ItemRepository implements IItemRepository {
@@ -115,6 +116,9 @@ export class ItemRepository implements IItemRepository {
     }
     if (filters.nameRegex) {
       qb.andWhere("item.title ~* :regex", { regex: filters.nameRegex });
+    }
+    if (filters.ownerId !== undefined) {
+      qb.andWhere("owner.id = :ownerId", { ownerId: filters.ownerId });
     }
 
     // get both raw and entity results

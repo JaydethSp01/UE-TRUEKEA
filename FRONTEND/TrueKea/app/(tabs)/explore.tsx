@@ -43,12 +43,9 @@ export default function ExploreTab() {
       const categoriesRes = await api.get("/categories");
       setCategories(categoriesRes.data);
 
-      // Simular usuarios destacados
-      setTopUsers([
-        { id: 1, name: "María G.", swaps: 45, co2: 520, avatar: "MG" },
-        { id: 2, name: "Carlos R.", swaps: 38, co2: 420, avatar: "CR" },
-        { id: 3, name: "Ana S.", swaps: 32, co2: 380, avatar: "AS" },
-      ]);
+      // Usuarios destacados desde el backend
+      const topRes = await api.getTopUsers(5);
+      setTopUsers(Array.isArray(topRes) ? topRes : []);
     } catch (error) {
       console.error("Error loading content:", error);
     } finally {
@@ -189,43 +186,45 @@ export default function ExploreTab() {
           </View>
         </View>
 
-        {/* Top Usuarios */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Usuarios Destacados</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAllText}>Ver todos</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.usersContainer}>
-            {topUsers.map((user, index) => (
-              <TouchableOpacity
-                key={user.id}
-                style={styles.userCard}
-                onPress={() => router.push(`/profile/${user.id}` as `/profile/[userId]`)}
-              >
-                <View style={styles.userRank}>
-                  <Text style={styles.userRankText}>#{index + 1}</Text>
-                </View>
-                <View style={styles.userAvatar}>
-                  <Text style={styles.userAvatarText}>{user.avatar}</Text>
-                </View>
-                <Text style={styles.userName}>{user.name}</Text>
-                <View style={styles.userStats}>
-                  <View style={styles.userStat}>
-                    <Text style={styles.userStatValue}>{user.swaps}</Text>
-                    <Text style={styles.userStatLabel}>Swaps</Text>
-                  </View>
-                  <View style={styles.userStatDivider} />
-                  <View style={styles.userStat}>
-                    <Text style={styles.userStatValue}>{user.co2}</Text>
-                    <Text style={styles.userStatLabel}>kg CO₂</Text>
-                  </View>
-                </View>
+        {/* Top Usuarios (desde GET /users/top) */}
+        {topUsers.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Usuarios Destacados</Text>
+              <TouchableOpacity>
+                <Text style={styles.seeAllText}>Ver todos</Text>
               </TouchableOpacity>
-            ))}
+            </View>
+            <View style={styles.usersContainer}>
+              {topUsers.map((user, index) => (
+                <TouchableOpacity
+                  key={user.id}
+                  style={styles.userCard}
+                  onPress={() => router.push(`/profile/${user.id}` as `/profile/[userId]`)}
+                >
+                  <View style={styles.userRank}>
+                    <Text style={styles.userRankText}>#{index + 1}</Text>
+                  </View>
+                  <View style={styles.userAvatar}>
+                    <Text style={styles.userAvatarText}>{user.avatar}</Text>
+                  </View>
+                  <Text style={styles.userName}>{user.name}</Text>
+                  <View style={styles.userStats}>
+                    <View style={styles.userStat}>
+                      <Text style={styles.userStatValue}>{user.swaps}</Text>
+                      <Text style={styles.userStatLabel}>Swaps</Text>
+                    </View>
+                    <View style={styles.userStatDivider} />
+                    <View style={styles.userStat}>
+                      <Text style={styles.userStatValue}>{user.co2}</Text>
+                      <Text style={styles.userStatLabel}>kg CO₂</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Tips de Sostenibilidad */}
         <View style={styles.section}>

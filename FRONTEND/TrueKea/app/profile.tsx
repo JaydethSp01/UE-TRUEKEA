@@ -9,25 +9,28 @@ import {
   Image,
   Alert,
   Switch,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "../hooks/useAuth";
 import { Colors } from "../constants/Colors";
 import { TextInputField } from "../components/TextInputField";
 import { ButtonPrimary } from "../components/ButtonPrimary";
+import api from "../services/api";
 
 export default function ProfileScreen() {
-  const [profile, setProfile] = useState({
-    name: "Juan Pérez",
-    email: "juan@example.com",
-    phone: "+57 300 123 4567",
-    location: "Bogotá Norte",
-    bio: "Me encanta intercambiar objetos y contribuir al medio ambiente. Siempre busco darle una segunda vida a las cosas.",
-    rating: 4.8,
-    completedExchanges: 23,
-    co2Saved: 145.5,
-    joinDate: "2024-01-15",
-  });
+  const [profile, setProfile] = useState<{
+    name: string;
+    email: string;
+    phone?: string;
+    location?: string;
+    bio?: string;
+    rating: number;
+    completedExchanges: number;
+    co2Saved: number;
+    joinDate?: string;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const [notifications, setNotifications] = useState({
     newMessages: true,
@@ -43,12 +46,62 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (!user) {
       router.replace("/login");
+      return;
     }
+    loadProfile();
   }, [user]);
 
-  const handleSave = () => {
-    setIsEditing(false);
-    Alert.alert("Éxito", "Perfil actualizado correctamente");
+  const loadProfile = async () => {
+    if (!user?.id) return;
+    try {
+      setLoading(true);
+      const [statsRes, userRes] = await Promise.all([
+        api.getUserStatsByUserId(user.id),
+        api.get(`/users/${user.id}`),
+      ]);
+      const u = userRes.data || {};
+      setProfile({
+        name: u.name ?? user.name ?? "",
+        email: u.email ?? user.email ?? "",
+        phone: u.phone ?? "",
+        location: u.location ?? "",
+        bio: u.bio ?? "",
+        rating: statsRes.rating ?? 0,
+        completedExchanges: statsRes.completedSwaps ?? 0,
+        co2Saved: statsRes.totalCO2Saved ?? 0,
+        joinDate: undefined,
+      });
+    } catch {
+      setProfile({
+        name: user.name ?? "",
+        email: user.email ?? "",
+        phone: "",
+        location: "",
+        bio: "",
+        rating: 0,
+        completedExchanges: 0,
+        co2Saved: 0,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!profile || !user) return;
+    try {
+      await api.updateProfile({
+        name: profile.name,
+        email: profile.email,
+        phone: profile.phone,
+        location: profile.location,
+        bio: profile.bio,
+      });
+      setIsEditing(false);
+      Alert.alert("Éxito", "Perfil actualizado correctamente");
+    } catch {
+      Alert.alert("Error", "No se pudo actualizar el perfil");
+    }
   };
 
   const handleLogout = () => {
@@ -62,6 +115,14 @@ export default function ProfileScreen() {
   const inputStyle = isEditing
     ? styles.input
     : { ...styles.input, ...styles.inputDisabled };
+
+  if (loading || !profile) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -87,12 +148,12 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>⭐ {profile.rating}</Text>
+            <Text style={styles.statNumber}>⭐ {profile.rating.toFixed(1)}</Text>
             <Text style={styles.statLabel}>Calificación</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{profile.co2Saved}kg</Text>
+            <Text style={styles.statNumber}>{profile.co2Saved} kg</Text>
             <Text style={styles.statLabel}>CO₂ Ahorrado</Text>
           </View>
         </View>
@@ -123,7 +184,7 @@ export default function ProfileScreen() {
 
           <TextInputField
             placeholder="Teléfono"
-            value={profile.phone}
+            value={profile.phone ?? ""}
             onChangeText={(text) => setProfile({ ...profile, phone: text })}
             editable={isEditing}
             keyboardType="phone-pad"
@@ -132,7 +193,7 @@ export default function ProfileScreen() {
 
           <TextInputField
             placeholder="Ubicación"
-            value={profile.location}
+            value={profile.location ?? ""}
             onChangeText={(text) => setProfile({ ...profile, location: text })}
             editable={isEditing}
             style={inputStyle}
@@ -140,7 +201,7 @@ export default function ProfileScreen() {
 
           <TextInputField
             placeholder="Cuéntanos sobre ti..."
-            value={profile.bio}
+            value={profile.bio ?? ""}
             onChangeText={(text) => setProfile({ ...profile, bio: text })}
             editable={isEditing}
             multiline

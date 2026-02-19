@@ -10,7 +10,7 @@ export default class UpdateUserProfile {
   constructor() {
     this.repo = new UserRepository();
   }
-  async execute(data: Partial<UserDTO> & { id: string }): Promise<User> {
+  async execute(data: Partial<UserDTO> & { id: string; phone?: string; location?: string; bio?: string }): Promise<User> {
     try {
       const existing = await this.repo.findById(Number(data.id));
       if (!existing) throw new Error("User not found");
@@ -24,7 +24,11 @@ export default class UpdateUserProfile {
         hash,
         data.roleId || existing.roleId,
         existing.createdAt,
-        new Date()
+        new Date(),
+        existing.status_user,
+        data.phone !== undefined ? data.phone : existing.phone,
+        data.location !== undefined ? data.location : existing.location,
+        data.bio !== undefined ? data.bio : existing.bio
       );
       return await this.repo.update(entity);
     } catch (err: any) {

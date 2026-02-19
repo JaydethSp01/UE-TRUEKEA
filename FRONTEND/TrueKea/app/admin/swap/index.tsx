@@ -66,7 +66,7 @@ export default function AdminSwapsScreen() {
   const loadSwaps = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/admin/swaps/list");
+      const response = await api.get("/admin/swaps");
       setSwaps(response.data);
     } catch (error) {
       Alert.alert("Error", "No se pudieron cargar los intercambios");
@@ -99,7 +99,7 @@ export default function AdminSwapsScreen() {
           text: "Confirmar",
           onPress: async () => {
             try {
-              await api.put(`/admin/swap/${swap.id}`, { status: newStatus });
+              await api.put(`/admin/swaps/${swap.id}`, { status: newStatus });
               await loadSwaps();
               Alert.alert("Éxito", "Estado actualizado correctamente");
             } catch (error) {
@@ -122,7 +122,7 @@ export default function AdminSwapsScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              await api.delete(`/admin/swap/${swap.id}`);
+              await api.delete(`/admin/swaps/${swap.id}`);
               await loadSwaps();
               Alert.alert("Éxito", "Intercambio eliminado correctamente");
             } catch (error) {

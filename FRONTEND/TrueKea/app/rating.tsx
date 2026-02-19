@@ -1,19 +1,46 @@
-// app/rating.tsx
+// app/rating.tsx – Conectado al backend POST /ratings
 import React, { useState } from "react";
-import { View, TextInput, StyleSheet, Text, Alert } from "react-native";
-import { Stack } from "expo-router";
+import { View, TextInput, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { ButtonPrimary } from "../components/ButtonPrimary";
 import { Colors } from "../constants/Colors";
 import { FontAwesome } from "@expo/vector-icons";
+import { useAuth } from "../hooks/useAuth";
+import api from "../services/api";
 
 export default function Rating() {
+  const params = useLocalSearchParams<{ swapId?: string }>();
+  const router = useRouter();
+  const { user } = useAuth();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
-  const submit = () => {
+  const [sending, setSending] = useState(false);
+
+  const swapId = params.swapId ? Number(params.swapId) : null;
+
+  const submit = async () => {
     if (rating === 0)
       return Alert.alert("Error", "Selecciona una calificación");
-    Alert.alert("Gracias", "Calificación enviada");
+    if (!user?.id) return Alert.alert("Error", "Debes iniciar sesión");
+    if (!swapId) return Alert.alert("Error", "No se encontró el intercambio");
+    try {
+      setSending(true);
+      await api.rateSwap({
+        swapId,
+        raterId: user.id,
+        score: rating,
+        comment: comment || undefined,
+      });
+      Alert.alert("Gracias", "Calificación enviada", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    } catch {
+      Alert.alert("Error", "No se pudo enviar la calificación");
+    } finally {
+      setSending(false);
+    }
   };
+
   return (
     <View style={s.container}>
       <Stack.Screen options={{ title: "Calificar trueque" }} />
@@ -38,7 +65,16 @@ export default function Rating() {
         value={comment}
         onChangeText={setComment}
       />
-      <ButtonPrimary title="Enviar" onPress={submit} />
+      <ButtonPrimary
+        title={sending ? "Enviando…" : "Enviar"}
+        onPress={submit}
+        disabled={sending}
+      />
+      {sending && (
+        <View style={s.loader}>
+          <ActivityIndicator size="small" color={Colors.primary} />
+        </View>
+      )}
     </View>
   );
 }
@@ -46,6 +82,7 @@ export default function Rating() {
 const s = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: Colors.background },
   stars: { flexDirection: "row", justifyContent: "center", marginVertical: 24 },
+  loader: { marginTop: 12 },
   input: {
     borderWidth: 1,
     borderColor: Colors.border,
