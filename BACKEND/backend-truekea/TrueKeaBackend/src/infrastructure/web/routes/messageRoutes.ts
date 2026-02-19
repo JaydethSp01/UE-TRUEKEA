@@ -1,11 +1,11 @@
-import { Router } from "express";
+import { Router, RequestHandler } from "express";
 import MessageController from "../controllers/MessageController";
 
 const router = Router();
 
-router.post("/", MessageController.send);
-router.get("/conversation", MessageController.conversation);
-router.post("/conversation", MessageController.conversation);
-router.get("/conversations", MessageController.listConversations);
+router.post("/", MessageController.send as RequestHandler);
+router.get("/conversation", MessageController.conversation as RequestHandler);
+router.post("/conversation", MessageController.conversation as RequestHandler);
+router.get("/conversations", MessageController.listConversations as RequestHandler);
 
 export default router;
